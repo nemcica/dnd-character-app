@@ -1,48 +1,55 @@
 package com.anem.character_app.feat;
 
-import com.anem.character_app.util.Mapper;
+import com.anem.character_app.feat.dto.FeatCreateRequest;
+import com.anem.character_app.feat.dto.FeatResponse;
+import com.anem.character_app.feat.dto.FeatUpdateRequest;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
-public class FeatServiceImpl implements FeatService{
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class FeatServiceImpl implements FeatService {
 
-    private final Mapper<Feat, FeatDto> featMapper;
+    private final FeatMapper featMapper;
     private final FeatRepository featRepository;
 
     @Override
-    public FeatDto createFeat(FeatDto featDto) {
-        if(featRepository.existsById(featDto.id())) {
-            throw new EntityExistsException("Id: " + featDto.id() + " already exists.");
+    @Transactional
+    public FeatResponse createFeat(FeatCreateRequest request) {
+        if (featRepository.existsById(request.id())) {
+            throw new EntityExistsException("Id: " + request.id() + " already exists.");
         }
-        Feat savedFeat = featMapper.toEntity(featDto);
-        return featMapper.toDto(featRepository.save(savedFeat));
+
+        Feat feat = featMapper.toEntity(request);
+        Feat savedFeat = featRepository.save(feat);
+
+        return featMapper.toResponse(savedFeat);
     }
 
     @Override
-    public FeatDto updateFeat(String id, FeatDto featDto) {
-        if(!featRepository.existsById(id)) {
-            throw new EntityNotFoundException("Id: " + featDto.id() + " does not exist.");
-        }
-        Feat savedFeat = featMapper.toEntity(featDto);
-        return featMapper.toDto(featRepository.save(savedFeat));
+    @Transactional
+    public FeatResponse updateFeat(String id, FeatUpdateRequest request) {
+        Feat existingFeat = featRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Id: " + id + " does not exist."));
+
+        featMapper.updateEntityFromRequest(request, existingFeat);
+
+        Feat updatedFeat = featRepository.save(existingFeat);
+
+        return featMapper.toResponse(updatedFeat);
     }
 
     @Override
-    public Page<FeatDto> getAllFeats(Pageable pageable) {
-        return featRepository.findAll(pageable).map(featMapper::toDto);
-    }
-
-    @Override
-    public Optional<FeatDto> getFeatById(String id) {
-        return featRepository.findById(id).map(featMapper::toDto);
+    public Optional<FeatResponse> getFeatById(String id) {
+        return featRepository.findById(id).map(featMapper::toResponse);
     }
 
     @Override
@@ -51,7 +58,19 @@ public class FeatServiceImpl implements FeatService{
     }
 
     @Override
+    @Transactional
     public void delete(String id) {
+        if (!featRepository.existsById(id)) {
+            throw new EntityNotFoundException("Id: " + id + " does not exist.");
+        }
         featRepository.deleteById(id);
     }
+
+    @Override
+    public Page<FeatResponse> searchFeats(String name, FeatTag featTag, Pageable pageable) {
+        Specification<Feat> specification = FeatSpecifications.withFilters(name, featTag);
+
+        return featRepository.findAll(specification, pageable).map(featMapper::toResponse);
+    }
+
 }
