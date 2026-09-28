@@ -2,6 +2,7 @@ package com.anem.character_app.race;
 
 import com.anem.character_app.race.dto.RaceCreateRequest;
 import com.anem.character_app.race.dto.RaceResponse;
+import com.anem.character_app.race.dto.RaceSearchRequest;
 import com.anem.character_app.race.dto.RaceUpdateRequest;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -67,8 +68,8 @@ public class RaceServiceImpl implements RaceService {
     }
 
     @Override
-    public Page<RaceResponse> searchRaces(String name, String size, String speed, String specialTraits, Pageable pageable) {
-        Specification<Race> specification = RaceSpecifications.withFilters(name, size, speed, specialTraits);
+    public Page<RaceResponse> searchRaces(RaceSearchRequest raceSearchRequest, Pageable pageable) {
+        Specification<Race> specification = RaceSpecifications.withFilters(raceSearchRequest);
 
         return raceRepository.findAll(specification, pageable).map(raceMapper::toResponse);
     }

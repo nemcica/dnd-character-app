@@ -2,6 +2,7 @@ package com.anem.character_app.feat;
 
 import com.anem.character_app.feat.dto.FeatCreateRequest;
 import com.anem.character_app.feat.dto.FeatResponse;
+import com.anem.character_app.feat.dto.FeatSearchRequest;
 import com.anem.character_app.feat.dto.FeatUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,5 +20,5 @@ public interface FeatService {
 
     void delete(String id);
 
-    Page<FeatResponse> searchFeats(String name, FeatTag featTag, Pageable pageable);
+    Page<FeatResponse> searchFeats(FeatSearchRequest featSearchRequest, Pageable pageable);
 }

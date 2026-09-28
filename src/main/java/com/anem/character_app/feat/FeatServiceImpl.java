@@ -2,6 +2,7 @@ package com.anem.character_app.feat;
 
 import com.anem.character_app.feat.dto.FeatCreateRequest;
 import com.anem.character_app.feat.dto.FeatResponse;
+import com.anem.character_app.feat.dto.FeatSearchRequest;
 import com.anem.character_app.feat.dto.FeatUpdateRequest;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -31,7 +32,6 @@ public class FeatServiceImpl implements FeatService {
 
         Feat feat = featMapper.toEntity(request);
         Feat savedFeat = featRepository.save(feat);
-
         return featMapper.toResponse(savedFeat);
     }
 
@@ -67,8 +67,8 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public Page<FeatResponse> searchFeats(String name, FeatTag featTag, Pageable pageable) {
-        Specification<Feat> specification = FeatSpecifications.withFilters(name, featTag);
+    public Page<FeatResponse> searchFeats(FeatSearchRequest featSearchRequest, Pageable pageable) {
+        Specification<Feat> specification = FeatSpecifications.withFilters(featSearchRequest);
 
         return featRepository.findAll(specification, pageable).map(featMapper::toResponse);
     }

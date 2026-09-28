@@ -2,6 +2,7 @@ package com.anem.character_app.race;
 
 import com.anem.character_app.race.dto.RaceCreateRequest;
 import com.anem.character_app.race.dto.RaceResponse;
+import com.anem.character_app.race.dto.RaceSearchRequest;
 import com.anem.character_app.race.dto.RaceUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,5 +20,5 @@ public interface RaceService {
 
     void delete(String id);
 
-    Page<RaceResponse> searchRaces(String name, String size, String speed, String specialTraits, Pageable pageable);
+    Page<RaceResponse> searchRaces(RaceSearchRequest raceSearchRequest, Pageable pageable);
 }

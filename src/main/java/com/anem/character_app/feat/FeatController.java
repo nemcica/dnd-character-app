@@ -2,6 +2,7 @@ package com.anem.character_app.feat;
 
 import com.anem.character_app.feat.dto.FeatCreateRequest;
 import com.anem.character_app.feat.dto.FeatResponse;
+import com.anem.character_app.feat.dto.FeatSearchRequest;
 import com.anem.character_app.feat.dto.FeatUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,9 @@ public class FeatController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<FeatResponse>> searchFeats(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) FeatTag featTag,
-            Pageable pageable) {
+    public ResponseEntity<Page<FeatResponse>> searchFeats(@RequestBody FeatSearchRequest featSearchRequest, Pageable pageable) {
 
-        Page<FeatResponse> feats = featService.searchFeats(name, featTag, pageable);
+        Page<FeatResponse> feats = featService.searchFeats(featSearchRequest, pageable);
         return ResponseEntity.ok(feats);
     }
 

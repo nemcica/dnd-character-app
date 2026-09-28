@@ -1,4 +1,4 @@
-package com.anem.character_app.misc;
+package com.anem.character_app.generic;
 
 public enum AbilityScore {
     STRENGTH,

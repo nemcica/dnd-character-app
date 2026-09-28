@@ -2,6 +2,7 @@ package com.anem.character_app.race;
 
 import com.anem.character_app.race.dto.RaceCreateRequest;
 import com.anem.character_app.race.dto.RaceResponse;
+import com.anem.character_app.race.dto.RaceSearchRequest;
 import com.anem.character_app.race.dto.RaceUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,14 +32,9 @@ public class RaceController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<RaceResponse>> searchRaces(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String size,
-            @RequestParam(required = false) String speed,
-            @RequestParam(required = false) String specialTraits,
-            Pageable pageable) {
+    public ResponseEntity<Page<RaceResponse>> searchRaces(@RequestBody RaceSearchRequest raceSearchRequest, Pageable pageable) {
 
-        Page<RaceResponse> races = raceService.searchRaces(name, size, speed, specialTraits, pageable);
+        Page<RaceResponse> races = raceService.searchRaces(raceSearchRequest, pageable);
         return ResponseEntity.ok(races);
     }
 

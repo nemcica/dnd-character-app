@@ -1,5 +1,6 @@
 package com.anem.character_app.race;
 
+import com.anem.character_app.generic.CreatureSize;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -22,7 +23,7 @@ public class Race {
     String creatureType;
 
     @Column(nullable = false)
-    String size;
+    CreatureSize size;
 
     @Column(nullable = false)
     String speed;
