@@ -8,4 +8,5 @@ public record ClassResponse(
         String id,
         String name,
         int hitDie,
-        Set<Ability> savingThrows) {}
+        Set<Ability> savingThrows
+) {}

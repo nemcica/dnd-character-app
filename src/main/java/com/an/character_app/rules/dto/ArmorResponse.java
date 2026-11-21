@@ -9,5 +9,4 @@ public record ArmorResponse(
         int baseAc,
         Integer dexCap,
         String source
-) {
-}
+) {}

@@ -1,5 +1,8 @@
 package com.an.character_app.rules.model;
 
+import lombok.Getter;
+
+@Getter
 public enum Skill {
 
     ATHLETICS(Ability.STR),
@@ -22,11 +25,9 @@ public enum Skill {
     PERSUASION(Ability.CHA);
 
     private final Ability ability;
+
     Skill(Ability ability) {
         this.ability = ability;
-    }
-    public Ability getAbility() {
-        return ability;
     }
 }
 
