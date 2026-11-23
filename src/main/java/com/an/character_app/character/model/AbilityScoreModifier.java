@@ -30,7 +30,7 @@ public class AbilityScoreModifier {
     private String source;
 
     public AbilityScoreModifier(PlayerCharacter playerCharacter, Ability ability, int amount, String source) {
-        this.playerCharacter =playerCharacter;
+        this.playerCharacter = playerCharacter;
         this.ability = ability;
         this.amount = amount;
         this.source = source;

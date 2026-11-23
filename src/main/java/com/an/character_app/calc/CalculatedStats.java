@@ -12,6 +12,9 @@ public record CalculatedStats(
         Map<Ability, Integer> savingThrows,
         int maxHp,
         int armorClass,
-        int initiative
+        int initiative,
+        int passivePerception,
+        int passiveInsight,
+        int passiveInvestigation
 ) {
 }

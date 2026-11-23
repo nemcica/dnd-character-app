@@ -1,9 +1,14 @@
 package com.an.character_app.calc;
 
+import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.ArmorCategory;
 import com.an.character_app.rules.model.ProficiencyLevel;
+import com.an.character_app.rules.model.Skill;
 
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public final class CharacterCalculator {
 
@@ -59,6 +64,55 @@ public final class CharacterCalculator {
 
     public static int passiveScore(int skillModifier) {
         return 10 + skillModifier;
+    }
+
+    public static CalculatedStats calculate(CharacterInput characterInput) {
+        int proficiencyBonus = proficiencyBonus(characterInput.level());
+
+        Map<Ability, AbilityBreakdown> abilities = new EnumMap<>(Ability.class);
+        for (Map.Entry<Ability, Integer> entry : characterInput.baseAbilityScores().entrySet()) {
+            Ability ability = entry.getKey();
+            int baseValue = entry.getValue();
+            int bonusValue = characterInput.bonusAbilityScores().getOrDefault(ability, 0);
+            int total = totalAbilityScore(baseValue, bonusValue);
+            int modifier = abilityModifier(total);
+            abilities.put(ability, new AbilityBreakdown(baseValue, bonusValue, total, modifier));
+        }
+
+        Map<Skill, Integer> skills = new EnumMap<>(Skill.class);
+        for (Skill s : Skill.values()) {
+            int value = skillModifier(abilities.get(s.getAbility()).modifier(), proficiencyBonus, characterInput.skillProficiencies().getOrDefault(s, ProficiencyLevel.NONE));
+            skills.put(s, value);
+        }
+
+        Map<Ability, Integer> savingThrows = new EnumMap<>(Ability.class);
+        for (Ability a : Ability.values()) {
+            int value = savingThrowModifier(abilities.get(a).modifier(), proficiencyBonus, characterInput.savingThrowProficiencies().contains(a));
+            savingThrows.put(a, value);
+        }
+
+        int maxHp = maxHp(characterInput.hitDie(), Collections.nCopies(characterInput.level() - 1, characterInput.hitDie()), abilities.get(Ability.CON).modifier());
+
+        int armorClass = armorClass(abilities.get(Ability.DEX).modifier(), characterInput.armorCategory(), characterInput.baseAc(), characterInput.dexCap(), characterInput.shieldBonus());
+
+        int initiative = initiative(abilities.get(Ability.DEX).modifier(), 0); //TO-DO: add initiative bonuses to char input
+
+        int passivePerception = passiveScore(skills.get(Skill.PERCEPTION));
+        int passiveInsight = passiveScore(skills.get(Skill.INSIGHT));
+        int passiveInvestigation = passiveScore(skills.get(Skill.INVESTIGATION));
+
+        return new CalculatedStats(
+                proficiencyBonus,
+                abilities,
+                skills,
+                savingThrows,
+                maxHp,
+                armorClass,
+                initiative,
+                passivePerception,
+                passiveInsight,
+                passiveInvestigation
+        );
     }
 
     private CharacterCalculator() {
