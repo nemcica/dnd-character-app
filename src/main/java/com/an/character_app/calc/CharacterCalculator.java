@@ -45,7 +45,7 @@ public final class CharacterCalculator {
             total = 10 + dexModifier;
         } else {
             total = baseAc + switch (category) {
-                case LIGHT  -> dexModifier;
+                case LIGHT -> dexModifier;
                 case MEDIUM -> Math.min(dexModifier, dexCap == null ? 2 : dexCap);
                 case HEAVY, SHIELD -> 0;
             };
@@ -57,15 +57,10 @@ public final class CharacterCalculator {
         return dexModifier + bonus;
     }
 
-    public static int passivePerception(int wisModifier) {
-        return 10 + wisModifier;
+    public static int passiveScore(int skillModifier) {
+        return 10 + skillModifier;
     }
 
-    public static int passiveInsight(int wisModifier) {
-        return 10 + wisModifier;
-    }
-
-    public static int passiveInvestigation(int intModifier) {
-        return 10 + intModifier;
+    private CharacterCalculator() {
     }
 }
