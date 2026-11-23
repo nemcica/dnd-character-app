@@ -49,7 +49,15 @@ public class PlayerCharacter {
     @OneToMany(mappedBy = "playerCharacter", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AbilityScoreModifier> abilityScoreModifiers = new ArrayList<>();
 
+    @OneToMany(mappedBy = "playerCharacter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SkillProficiencyGrant> skillProficiencyGrants = new ArrayList<>();
+
     public void addAbilityScoreModifier(Ability ability, int amount, String source) {
         abilityScoreModifiers.add(new AbilityScoreModifier(this, ability, amount, source));
     }
+
+    public void addSkillProficiencyGrant(Skill skill, ProficiencyLevel proficiencyLevel, String source) {
+        skillProficiencyGrants.add(new SkillProficiencyGrant(this, skill, proficiencyLevel, source));
+    }
+
 }

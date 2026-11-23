@@ -2,8 +2,10 @@ package com.an.character_app.calc;
 
 import com.an.character_app.character.model.AbilityScoreModifier;
 import com.an.character_app.character.model.PlayerCharacter;
+import com.an.character_app.character.model.SkillProficiencyGrant;
 import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.ArmorDef;
+import com.an.character_app.rules.model.ProficiencyLevel;
 import com.an.character_app.rules.model.Skill;
 
 import java.util.*;
@@ -24,6 +26,14 @@ public class CharacterInputMapper {
             bonusScores.merge(asm.getAbility(), asm.getAmount(), Integer::sum);
         }
 
+        Map<Skill, ProficiencyLevel> skillProficiencies = new EnumMap<>(Skill.class);
+        for (Skill s : playerCharacter.getBackground().getSkills()) {
+            skillProficiencies.put(s, ProficiencyLevel.PROFICIENT);
+        }
+        for (SkillProficiencyGrant g : playerCharacter.getSkillProficiencyGrants()) {
+            skillProficiencies.merge(g.getSkill(), g.getProficiencyLevel(), (a, b) -> a.compareTo(b) >= 0 ? a : b);
+        }
+
         Set<Ability> savingThrowProficiencies = EnumSet.noneOf(Ability.class);
         savingThrowProficiencies.addAll(playerCharacter.getCharacterClass().getSavingThrows());
 
@@ -35,7 +45,7 @@ public class CharacterInputMapper {
                 playerCharacter.getCharacterClass().getHitDie(),
                 baseScores,
                 bonusScores,
-                new EnumMap<>(Skill.class),  //TO-DO
+                skillProficiencies,
                 savingThrowProficiencies,
                 armor == null ? null : armor.getCategory(),
                 armor == null ? null : armor.getBaseAc(),

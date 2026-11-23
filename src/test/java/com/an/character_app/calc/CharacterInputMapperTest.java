@@ -2,16 +2,14 @@ package com.an.character_app.calc;
 
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
-import com.an.character_app.rules.model.Ability;
-import com.an.character_app.rules.model.ArmorCategory;
-import com.an.character_app.rules.model.ArmorDef;
-import com.an.character_app.rules.model.ClassDef;
+import com.an.character_app.rules.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,11 +30,18 @@ class CharacterInputMapperTest {
         return a;
     }
 
+    private BackgroundDef background(Skill... skills) {
+        BackgroundDef b = mock(BackgroundDef.class);
+        when(b.getSkills()).thenReturn(Set.of(skills));
+        return b;
+    }
+
     private PlayerCharacter baseCharacter() {
         PlayerCharacter pc = new PlayerCharacter();
         pc.setLevel(5);
         pc.setBaseAbilityScores(new AbilityScores(15, 14, 13, 12, 10, 8));
         pc.setCharacterClass(fighterClass());
+        pc.setBackground(background());
         return pc;
     }
 
@@ -105,4 +110,55 @@ class CharacterInputMapperTest {
         assertThat(bonus).hasSize(Ability.values().length);
         assertThat(bonus.values()).allMatch(v -> v == 0);
     }
+
+    @Test
+    void backgroundSkillsAreProficient() {
+        PlayerCharacter pc = baseCharacter();
+        pc.setBackground(background(Skill.ATHLETICS, Skill.INTIMIDATION));
+
+        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+                .containsOnly(entry(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT),
+                        entry(Skill.INTIMIDATION, ProficiencyLevel.PROFICIENT));
+    }
+
+    @Test
+    void grantsAreMapped() {
+        PlayerCharacter pc = baseCharacter();
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
+
+        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+                .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.PROFICIENT));
+    }
+
+    @Test
+    void sameSkillFromTwoSourcesStaysSingleProficiency() {
+        PlayerCharacter pc = baseCharacter();
+        pc.setBackground(background(Skill.STEALTH));
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
+
+        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+                .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.PROFICIENT));
+    }
+
+    @Test
+    void expertiseUpgradesProficiency() {
+        PlayerCharacter pc = baseCharacter();
+        pc.setBackground(background(Skill.STEALTH));
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
+
+        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+                .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.EXPERTISE));
+    }
+
+    @Test
+    void proficiencyGrantNeverDowngradesExpertise() {
+        PlayerCharacter pc = baseCharacter();
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "FEAT:skilled");
+
+        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+                .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.EXPERTISE));
+    }
+
+
 }

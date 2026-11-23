@@ -2,11 +2,15 @@ package com.an.character_app.character.repository;
 
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
+import com.an.character_app.character.model.SkillProficiencyGrant;
 import com.an.character_app.rules.model.Ability;
+import com.an.character_app.rules.model.ProficiencyLevel;
+import com.an.character_app.rules.model.Skill;
 import com.an.character_app.rules.repository.ArmorDefRepository;
 import com.an.character_app.rules.repository.BackgroundDefRepository;
 import com.an.character_app.rules.repository.ClassDefRepository;
 import com.an.character_app.rules.repository.SpeciesDefRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -17,6 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 @DataJpaTest
 @Testcontainers
@@ -42,8 +47,10 @@ class PlayerCharacterRepositoryTest {
     @Autowired
     ArmorDefRepository armorDefRepository;
 
-    @Test
-    void savesAndLoadsCharacter() {
+    @Autowired
+    EntityManager entityManager;
+
+    private PlayerCharacter newTestCharacter() {
         PlayerCharacter playerCharacter = new PlayerCharacter();
         playerCharacter.setName("Test fighter");
         playerCharacter.setLevel(1);
@@ -53,6 +60,13 @@ class PlayerCharacterRepositoryTest {
         playerCharacter.setBackground(backgroundDefRepository.findById("soldier").orElseThrow());
         playerCharacter.setArmor(armorDefRepository.findById("chain-mail").orElseThrow());
 
+        return playerCharacter;
+    }
+
+    @Test
+    void savesAndLoadsCharacter() {
+        PlayerCharacter playerCharacter = newTestCharacter();
+
         PlayerCharacter savedCharacter = playerCharacterRepository.saveAndFlush(playerCharacter);
 
         PlayerCharacter loadedCharacter = playerCharacterRepository.findById(savedCharacter.getId()).orElseThrow();
@@ -61,5 +75,24 @@ class PlayerCharacterRepositoryTest {
         assertThat(loadedCharacter.getBaseAbilityScores().getAbility(Ability.STR)).isEqualTo(15);
         assertThat(loadedCharacter.getCharacterClass().getId()).isEqualTo("fighter");
         assertThat(loadedCharacter.getShield()).isNull();
+    }
+
+    @Test
+    void savesAndLoadsSkillProficiencyGrants() {
+        PlayerCharacter playerCharacter = newTestCharacter();
+        playerCharacter.addSkillProficiencyGrant(Skill.SLEIGHT_OF_HAND, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
+        playerCharacter.addSkillProficiencyGrant(Skill.ACROBATICS, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
+        Long id = playerCharacterRepository.saveAndFlush(playerCharacter).getId();
+        entityManager.clear();
+
+        PlayerCharacter loadedCharacter = playerCharacterRepository.findById(id).orElseThrow();
+        assertThat(loadedCharacter.getSkillProficiencyGrants())
+                .extracting(SkillProficiencyGrant::getSkill, SkillProficiencyGrant::getProficiencyLevel)
+                .containsExactlyInAnyOrder(
+                        tuple(Skill.SLEIGHT_OF_HAND, ProficiencyLevel.PROFICIENT),
+                        tuple(Skill.ACROBATICS, ProficiencyLevel.EXPERTISE)
+                );
+
+
     }
 }
