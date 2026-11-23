@@ -1,13 +1,11 @@
 package com.an.character_app.calc;
 
 import com.an.character_app.character.TestCharacters;
-import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.rules.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
