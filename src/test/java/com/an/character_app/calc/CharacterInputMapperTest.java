@@ -1,5 +1,6 @@
 package com.an.character_app.calc;
 
+import com.an.character_app.character.TestCharacters;
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.rules.model.*;
@@ -15,12 +16,7 @@ import static org.mockito.Mockito.when;
 
 class CharacterInputMapperTest {
 
-    private ClassDef fighterClass() {
-        ClassDef c = mock(ClassDef.class);
-        when(c.getHitDie()).thenReturn(10);
-        when(c.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
-        return c;
-    }
+    TestCharacters testCharacters = new TestCharacters();
 
     private ArmorDef armor(ArmorCategory category, int baseAc, Integer dexCap) {
         ArmorDef a = mock(ArmorDef.class);
@@ -30,24 +26,10 @@ class CharacterInputMapperTest {
         return a;
     }
 
-    private BackgroundDef background(Skill... skills) {
-        BackgroundDef b = mock(BackgroundDef.class);
-        when(b.getSkills()).thenReturn(Set.of(skills));
-        return b;
-    }
-
-    private PlayerCharacter baseCharacter() {
-        PlayerCharacter pc = new PlayerCharacter();
-        pc.setLevel(5);
-        pc.setBaseAbilityScores(new AbilityScores(15, 14, 13, 12, 10, 8));
-        pc.setCharacterClass(fighterClass());
-        pc.setBackground(background());
-        return pc;
-    }
 
     @Test
     void unarmoredCharacterHasNullArmorFieldsAndNoShieldBonus() {
-        PlayerCharacter pc = baseCharacter();       // no armor, no shield
+        PlayerCharacter pc = testCharacters.baseCharacter();
 
         CharacterInput input = CharacterInputMapper.toInput(pc);
 
@@ -59,7 +41,7 @@ class CharacterInputMapperTest {
 
     @Test
     void armorAndShieldAreMapped() {
-        PlayerCharacter pc = baseCharacter();
+        PlayerCharacter pc = testCharacters.baseCharacter();
         pc.setArmor(armor(ArmorCategory.HEAVY, 16, 0));
         pc.setShield(armor(ArmorCategory.SHIELD, 2, null));
 
@@ -73,7 +55,7 @@ class CharacterInputMapperTest {
 
     @Test
     void lightArmorKeepsNullDexCap() {
-        PlayerCharacter pc = baseCharacter();
+        PlayerCharacter pc = testCharacters.baseCharacter();
         pc.setArmor(armor(ArmorCategory.LIGHT, 11, null));
 
         assertThat(CharacterInputMapper.toInput(pc).dexCap()).isNull();
@@ -81,7 +63,7 @@ class CharacterInputMapperTest {
 
     @Test
     void baseScoresAndClassDataAreMapped() {
-        CharacterInput input = CharacterInputMapper.toInput(baseCharacter());
+        CharacterInput input = CharacterInputMapper.toInput(testCharacters.baseCharacter());
 
         assertThat(input.level()).isEqualTo(5);
         assertThat(input.hitDie()).isEqualTo(10);
@@ -94,7 +76,7 @@ class CharacterInputMapperTest {
 
     @Test
     void modifiersForTheSameAbilityAreSummed() {
-        PlayerCharacter pc = baseCharacter();
+        PlayerCharacter pc = testCharacters.baseCharacter();
         pc.addAbilityScoreModifier(Ability.STR, 2, "BACKGROUND:soldier");
         pc.addAbilityScoreModifier(Ability.STR, 1, "FEAT:test");
 
@@ -105,7 +87,7 @@ class CharacterInputMapperTest {
     @Test
     void bonusMapContainsEveryAbilityEvenWithoutModifiers() {
         Map<Ability, Integer> bonus =
-                CharacterInputMapper.toInput(baseCharacter()).bonusAbilityScores();
+                CharacterInputMapper.toInput(testCharacters.baseCharacter()).bonusAbilityScores();
 
         assertThat(bonus).hasSize(Ability.values().length);
         assertThat(bonus.values()).allMatch(v -> v == 0);
@@ -113,8 +95,8 @@ class CharacterInputMapperTest {
 
     @Test
     void backgroundSkillsAreProficient() {
-        PlayerCharacter pc = baseCharacter();
-        pc.setBackground(background(Skill.ATHLETICS, Skill.INTIMIDATION));
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setBackground(testCharacters.background(Skill.ATHLETICS, Skill.INTIMIDATION));
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
                 .containsOnly(entry(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT),
@@ -123,7 +105,7 @@ class CharacterInputMapperTest {
 
     @Test
     void grantsAreMapped() {
-        PlayerCharacter pc = baseCharacter();
+        PlayerCharacter pc = testCharacters.baseCharacter();
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
@@ -132,8 +114,8 @@ class CharacterInputMapperTest {
 
     @Test
     void sameSkillFromTwoSourcesStaysSingleProficiency() {
-        PlayerCharacter pc = baseCharacter();
-        pc.setBackground(background(Skill.STEALTH));
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setBackground(testCharacters.background(Skill.STEALTH));
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
@@ -142,8 +124,8 @@ class CharacterInputMapperTest {
 
     @Test
     void expertiseUpgradesProficiency() {
-        PlayerCharacter pc = baseCharacter();
-        pc.setBackground(background(Skill.STEALTH));
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setBackground(testCharacters.background(Skill.STEALTH));
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
@@ -152,7 +134,7 @@ class CharacterInputMapperTest {
 
     @Test
     void proficiencyGrantNeverDowngradesExpertise() {
-        PlayerCharacter pc = baseCharacter();
+        PlayerCharacter pc = testCharacters.baseCharacter();
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "FEAT:skilled");
 
