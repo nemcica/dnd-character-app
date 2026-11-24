@@ -272,4 +272,22 @@ class PlayerCharacterServiceImplTest {
         assertThat(sheet.calculatedStats().skills().get(Skill.STEALTH)).isEqualTo(5);
     }
 
+    @Test
+    void deleteThrowsWhenCharacterMissing() {
+        when(playerCharacterRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.deleteCharacter(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(playerCharacterRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteRemovesExistingCharacter() {
+        when(playerCharacterRepository.existsById(1L)).thenReturn(true);
+
+        service.deleteCharacter(1L);
+
+        verify(playerCharacterRepository).deleteById(1L);
+    }
+
 }

@@ -118,4 +118,23 @@ public class CharacterApiIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void listIsPaginatedAndDeleteRemovesCharacter() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/characters")
+                            .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/characters?size=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
+
+        Long id = playerCharacterRepository.findAll().getFirst().getId();
+        mockMvc.perform(delete("/characters/" + id)).andExpect(status().isNoContent());
+        mockMvc.perform(get("/characters/" + id)).andExpect(status().isNotFound());
+        assertThat(playerCharacterRepository.count()).isEqualTo(1);
+    }
 }

@@ -6,6 +6,7 @@ import com.an.character_app.calc.CharacterCalculator;
 import com.an.character_app.calc.CharacterInput;
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.dto.CharacterSheetResponse;
+import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
 import com.an.character_app.character.service.PlayerCharacterService;
 import com.an.character_app.exception.InvalidCharacterException;
@@ -17,20 +18,21 @@ import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PlayerCharacterController.class)
@@ -261,5 +263,33 @@ class PlayerCharacterControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ not json"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listReturnsPagedSummaries() throws Exception {
+        var summary = new CharacterSummary(1L, "Tom", 5, "Fighter", "Human", "Soldier");
+        when(playerCharacterService.getCharacters(any()))
+                .thenReturn(new PageImpl<>(List.of(summary), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/characters"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("Tom"))
+                .andExpect(jsonPath("$.page.totalElements").value(1));
+    }
+
+    @Test
+    void deleteReturns204() throws Exception {
+        mockMvc.perform(delete("/characters/1"))
+                .andExpect(status().isNoContent());
+        verify(playerCharacterService).deleteCharacter(1L);
+    }
+
+    @Test
+    void deleteMissingReturns404() throws Exception {
+        doThrow(new EntityNotFoundException("Character with id: 99 does not exist."))
+                .when(playerCharacterService).deleteCharacter(99L);
+
+        mockMvc.perform(delete("/characters/99"))
+                .andExpect(status().isNotFound());
     }
 }

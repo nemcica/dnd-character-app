@@ -10,3 +10,5 @@ spring:
 
 server:
   port: 2072
+
+spring.data.web.pageable.max-page-size: 100

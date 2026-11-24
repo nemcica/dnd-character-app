@@ -6,8 +6,8 @@ import com.an.character_app.calc.CharacterCalculator;
 import com.an.character_app.calc.CharacterInput;
 import com.an.character_app.calc.CharacterInputMapper;
 import com.an.character_app.character.dto.CharacterSheetResponse;
+import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
-import com.an.character_app.character.model.AbilityScoreModifier;
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
@@ -20,11 +20,11 @@ import com.an.character_app.rules.repository.ClassDefRepository;
 import com.an.character_app.rules.repository.SpeciesDefRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -116,6 +116,25 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         Long savedCharacterId = playerCharacterRepository.save(createdCharacter).getId();
 
         return getCharacterSheet(savedCharacterId);
+    }
+
+    @Override
+    public Page<CharacterSummary> getCharacters(Pageable pageable) {
+        return playerCharacterRepository.findAll(pageable)
+                .map(c -> new CharacterSummary(
+                        c.getId(), c.getName(), c.getLevel(),
+                        c.getCharacterClass().getName(),
+                        c.getSpecies().getName(),
+                        c.getBackground().getName()));
+    }
+
+    @Override
+    @Transactional
+    public void deleteCharacter(Long id) {
+        if (!playerCharacterRepository.existsById(id)) {
+            throw new EntityNotFoundException("Character with id: " + id + " does not exist.");
+        }
+        playerCharacterRepository.deleteById(id);
     }
 
     private ArmorDef findArmor(String id, String label) {
