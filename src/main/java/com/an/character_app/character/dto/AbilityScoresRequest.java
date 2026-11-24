@@ -3,7 +3,7 @@ package com.an.character_app.character.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
-public record AbilityScoreRequest(
+public record AbilityScoresRequest(
         @Min(3)
         @Max(18)
         int strength,

@@ -19,7 +19,7 @@ public record CreateCharacterRequest(
 
         @NotNull
         @Valid
-        AbilityScoreRequest baseAbilityScores,
+        AbilityScoresRequest baseAbilityScores,
 
         @NotBlank
         String classId,
