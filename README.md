@@ -117,12 +117,23 @@ com.an.character_app
 ├── rules/        reference data (classes, species, backgrounds, armor): read-only entities, DTOs, controller
 ├── character/    player data: entities, repository, service, controller, input mapper
 ├── calc/         pure Java calculations: no Spring, no JPA
+├── config/       Swagger configuration
+├── demo/         demo characters
 └── exception/    custom exceptions and the global handler
 ```
 
 Dependency rule: `rules` depends on nothing, `calc` depends on nothing, and
 `character` depends on both. `calc` never sees a JPA entity; the `character` layer
 converts an entity into a plain `CharacterInput` record first.
+Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums, 
+never on entities, JPA or Spring. The `character` layer converts a `PlayerCharacter` into 
+a plain `CharacterInput` record before calling it.
+
+## Rules data
+
+Seed data is a small subset for now: Fighter, Wizard and Rogue; Human, Elf and Dwarf;
+Soldier, Acolyte and Criminal; four armors and a shield. Rules live in Flyway migrations
+(`V2`, `V3`), so adding content means adding a migration with `insert` statements.
 
 ## Design decisions
 
