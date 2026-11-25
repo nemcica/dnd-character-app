@@ -131,9 +131,20 @@ a plain `CharacterInput` record before calling it.
 
 ## Rules data
 
-Seed data is a small subset for now: Fighter, Wizard and Rogue; Human, Elf and Dwarf;
-Soldier, Acolyte and Criminal. Full armor list is seeded. Rules live in Flyway migrations
-(`V2`, `V3`), so adding content means adding a migration with `insert` statements.
+Rules content is a deliberately small subset for now:
+
+- **Classes:** Fighter, Wizard, Rogue
+- **Species:** Human, Elf, Dwarf
+- **Backgrounds:** Soldier, Acolyte, Criminal
+- **Armor:** the full 2024 list, plus the shield
+
+The data is based on the SRD 5.2.1 (see [License and attribution](#license-and-attribution)).
+Only the mechanical values the app uses are stored (hit dice, armor class, DEX caps,
+proficiencies); any descriptive text is summarized in my own words.
+
+Rules live in Flyway migrations (`V2`, `V3`, `V7`), so adding content means adding a new
+migration with `insert` statements. Applied migrations are never edited. Corrections go in a
+new migration. Every row has a stable slug id (`fighter`, `chain-mail`) and a `source` column.
 
 ## Design decisions
 
@@ -175,3 +186,9 @@ Soldier, Acolyte and Criminal. Full armor list is seeded. Rules live in Flyway m
 3. Origin feats from backgrounds
 4. Equipment and inventory
 5. Spell lists
+
+## License and attribution
+
+This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the
+Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative
+Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
