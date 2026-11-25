@@ -1,4 +1,4 @@
-package com.an.character_app.mapper;
+package com.an.character_app.character.mapper;
 
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.model.AbilityScores;

@@ -9,7 +9,7 @@ import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.character.model.SkillProficiencyGrant;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
 import com.an.character_app.exception.InvalidCharacterException;
-import com.an.character_app.mapper.AbilityScoresMapper;
+import com.an.character_app.character.mapper.AbilityScoresMapper;
 import com.an.character_app.rules.model.*;
 import com.an.character_app.rules.repository.ArmorDefRepository;
 import com.an.character_app.rules.repository.BackgroundDefRepository;
