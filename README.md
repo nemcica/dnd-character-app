@@ -155,7 +155,6 @@ converts an entity into a plain `CharacterInput` record first.
 - Feats, spells, equipment and inventory, features and class abilities
 - Updating a character (`PUT`)
 - Authentication and per-user ownership of characters
-- [Add anything else you've deliberately left out]
 
 ## Roadmap
 
