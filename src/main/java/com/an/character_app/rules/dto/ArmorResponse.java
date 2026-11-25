@@ -8,6 +8,8 @@ public record ArmorResponse(
         ArmorCategory category,
         int baseAc,
         Integer dexCap,
+        Integer minStrRequired,
+        boolean stealthDisadvantage,
         String source
 ) {
 }

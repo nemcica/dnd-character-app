@@ -21,5 +21,9 @@ public class ArmorDef {
 
     private Integer dexCap;
 
+    private Integer minStrRequired;
+
+    private boolean stealthDisadvantage;
+
     private String source;
 }
