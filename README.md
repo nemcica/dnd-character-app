@@ -132,7 +132,7 @@ a plain `CharacterInput` record before calling it.
 ## Rules data
 
 Seed data is a small subset for now: Fighter, Wizard and Rogue; Human, Elf and Dwarf;
-Soldier, Acolyte and Criminal; four armors and a shield. Rules live in Flyway migrations
+Soldier, Acolyte and Criminal. Full armor list is seeded. Rules live in Flyway migrations
 (`V2`, `V3`), so adding content means adding a migration with `insert` statements.
 
 ## Design decisions
@@ -166,6 +166,7 @@ Soldier, Acolyte and Criminal; four armors and a shield. Rules live in Flyway mi
 - Feats, spells, equipment and inventory, features and class abilities
 - Updating a character (`PUT`)
 - Authentication and per-user ownership of characters
+- Armor strength requirements, stealth disadvantage, and class armor training are stored or planned but not enforced.
 
 ## Roadmap
 
