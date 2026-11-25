@@ -1,4 +1,5 @@
 # D&D 2024 Character Manager API
+![CI](https://github.com/nemcica/dnd-character-app/actions/workflows/ci.yml/badge.svg)
 
 A REST API for creating and viewing Dungeons & Dragons (2024 rules) characters.
 You choose a class, species, background and ability scores; the API validates the
