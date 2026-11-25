@@ -7,8 +7,14 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  data:
+    web:
+      pageable:
+        max-page-size: 100
 
 server:
   port: 2072
+  tomcat:
+    max-locale-count: -1
 
-spring.data.web.pageable.max-page-size: 100
+
