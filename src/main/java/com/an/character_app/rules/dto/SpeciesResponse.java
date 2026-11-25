@@ -10,4 +10,5 @@ public record SpeciesResponse(
         int walkSpeed,
         Set<CreatureSize> creatureSizes,
         String creatureSizeDescription
-) {}
+) {
+}

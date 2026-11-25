@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
 
 jobs:
@@ -13,9 +13,9 @@ jobs:
 
       - uses: actions/setup-java@v5
         with:
-              distribution: temurin
-              java-version: 21
-              cache: maven
+          distribution: temurin
+          java-version: 21
+          cache: maven
 
       - name: Build and test
         run: mvn --batch-mode verify

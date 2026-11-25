@@ -10,4 +10,5 @@ public record CharacterSheetResponse(
         String className,
         String backgroundName,
         CalculatedStats calculatedStats
-) {}
+) {
+}

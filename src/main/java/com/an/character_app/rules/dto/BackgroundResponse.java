@@ -11,4 +11,5 @@ public record BackgroundResponse(
         String source,
         Set<Ability> abilityOptions,
         Set<Skill> skills
-) {}
+) {
+}

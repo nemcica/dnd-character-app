@@ -29,16 +29,16 @@ mvn verify
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/rules/classes` | Classes (hit die, saving throw proficiencies) |
-| GET | `/rules/species` | Species (speed, sizes) |
-| GET | `/rules/backgrounds` | Backgrounds (ability options, skills) |
-| GET | `/rules/armor` | Armor and shields |
-| POST | `/characters` | Create a character, returns `201` and the computed sheet |
-| GET | `/characters/{id}` | Character sheet |
-| GET | `/characters` | Paginated list (`?page=0&size=20&sort=name`) |
-| DELETE | `/characters/{id}` | Delete a character |
+| Method | Path                 | Description                                              |
+|--------|----------------------|----------------------------------------------------------|
+| GET    | `/rules/classes`     | Classes (hit die, saving throw proficiencies)            |
+| GET    | `/rules/species`     | Species (speed, sizes)                                   |
+| GET    | `/rules/backgrounds` | Backgrounds (ability options, skills)                    |
+| GET    | `/rules/armor`       | Armor and shields                                        |
+| POST   | `/characters`        | Create a character, returns `201` and the computed sheet |
+| GET    | `/characters/{id}`   | Character sheet                                          |
+| GET    | `/characters`        | Paginated list (`?page=0&size=20&sort=name`)             |
+| DELETE | `/characters/{id}`   | Delete a character                                       |
 
 ### Example
 
@@ -49,15 +49,24 @@ mvn verify
   "name": "Tom",
   "level": 5,
   "baseAbilityScores": {
-    "strength": 15, "dexterity": 14, "constitution": 13,
-    "intelligence": 12, "wisdom": 10, "charisma": 8
+    "strength": 15,
+    "dexterity": 14,
+    "constitution": 13,
+    "intelligence": 12,
+    "wisdom": 10,
+    "charisma": 8
   },
   "classId": "fighter",
   "speciesId": "human",
   "backgroundId": "soldier",
-  "backgroundAbilityBonuses": { "STR": 2, "CON": 1 },
+  "backgroundAbilityBonuses": {
+    "STR": 2,
+    "CON": 1
+  },
   "armorId": "chain-mail",
-  "classSkills": ["PERCEPTION"]
+  "classSkills": [
+    "PERCEPTION"
+  ]
 }
 ```
 

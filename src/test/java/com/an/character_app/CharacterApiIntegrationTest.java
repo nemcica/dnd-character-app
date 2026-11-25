@@ -24,21 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 public class CharacterApiIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    PlayerCharacterRepository playerCharacterRepository;
-
-    @AfterEach
-    void cleanUp() {
-        playerCharacterRepository.deleteAll();
-    }
-
     private static final String VALID_BODY = """
             {
               "name": "Tom",
@@ -55,6 +40,18 @@ public class CharacterApiIntegrationTest {
               "classSkills": ["PERCEPTION"]
             }
             """;
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
+    @Autowired
+    MockMvc mockMvc;
+    @Autowired
+    PlayerCharacterRepository playerCharacterRepository;
+
+    @AfterEach
+    void cleanUp() {
+        playerCharacterRepository.deleteAll();
+    }
 
     @Test
     void createsCharacterThenFetchesItWithCorrectSheet() throws Exception {

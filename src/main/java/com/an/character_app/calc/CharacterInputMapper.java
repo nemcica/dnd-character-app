@@ -8,7 +8,10 @@ import com.an.character_app.rules.model.ArmorDef;
 import com.an.character_app.rules.model.ProficiencyLevel;
 import com.an.character_app.rules.model.Skill;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 public class CharacterInputMapper {
 

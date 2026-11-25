@@ -12,6 +12,9 @@ import java.util.Map;
 
 public final class CharacterCalculator {
 
+    private CharacterCalculator() {
+    }
+
     public static int totalAbilityScore(int base, int bonus) {
         return Math.min(base + bonus, 20);
     }
@@ -113,8 +116,5 @@ public final class CharacterCalculator {
                 passiveInsight,
                 passiveInvestigation
         );
-    }
-
-    private CharacterCalculator() {
     }
 }

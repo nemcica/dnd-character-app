@@ -1,7 +1,6 @@
 package com.an.character_app.rules.model;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

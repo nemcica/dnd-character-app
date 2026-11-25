@@ -9,4 +9,5 @@ public record ClassResponse(
         String name,
         int hitDie,
         Set<Ability> savingThrows
-) {}
+) {
+}
