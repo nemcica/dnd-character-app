@@ -10,13 +10,13 @@ MapStruct, springdoc (Swagger UI), JUnit 5, Mockito, AssertJ, Testcontainers.
 
 ## Running it
 
-Prerequisites: Java 21, Docker, Maven.
+Prerequisites: Java 21, Maven, and Docker running.
 
 ```bash
-docker compose up -d      # starts PostgreSQL
-mvn spring-boot:run       # starts the API on http://localhost:2072
+mvn spring-boot:run
 ```
 
+PostgreSQL starts automatically through Spring Boot's Docker Compose support.
 Open **http://localhost:2072/swagger-ui.html** to try the endpoints.
 
 Run the tests (Docker must be running, the integration tests start a real PostgreSQL):
