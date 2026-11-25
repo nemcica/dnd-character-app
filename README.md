@@ -18,6 +18,7 @@ mvn spring-boot:run
 
 PostgreSQL starts automatically through Spring Boot's Docker Compose support.
 Open **http://localhost:2072/swagger-ui.html** to try the endpoints.
+Two demo characters are created on first launch (disable with `app.demo-data.enabled: false`).
 
 Run the tests (Docker must be running, the integration tests start a real PostgreSQL):
 
@@ -86,12 +87,12 @@ Response (abbreviated):
     },
     "savingThrows": {
       "STR": 6,
-      "DEX": 2,
+      "DEX": 2
     },
     "maxHp": 44,
     "armorClass": 16,
     "initiative": 2,
-    "passivePerception": 13,
+    "passivePerception": 13
   }
 }
 ```

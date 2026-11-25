@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.demo-data.enabled=false")
 @AutoConfigureMockMvc
 @Testcontainers
 public class CharacterApiIntegrationTest {

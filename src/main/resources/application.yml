@@ -17,4 +17,7 @@ server:
   tomcat:
     max-locale-count: -1
 
+app:
+  demo-data:
+    enabled: true
 
