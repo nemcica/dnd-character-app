@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Set;
 
 
 @Service
@@ -95,6 +94,19 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         if (backgroundBonusValidation != 3)
             throw new InvalidCharacterException("Total of provided ability bonuses is not correct: " + backgroundBonusValidation);
 
+        if (request.classSkills().size() != playerClass.getSkillChoiceCount())
+            throw new InvalidCharacterException("Number of selected class skills: " + request.classSkills().size() + " does not match the number of skills you can select: " + playerClass.getSkillChoiceCount());
+
+        for (Skill skill : request.classSkills()) {
+            if (!playerClass.getSkillOptions().contains(skill)) {
+                throw new InvalidCharacterException("The skill: " + skill.name() + " is not available in skill options of: " + playerClass.getName());
+            }
+            if (playerBackground.getSkills().contains(skill)) {
+                throw new InvalidCharacterException("The skill: " + skill.name() + " is already provided by background: " + playerBackground.getName());
+            }
+        }
+
+
         createdCharacter.setName(request.name());
         createdCharacter.setLevel(request.level());
         createdCharacter.setCharacterClass(playerClass);
@@ -108,8 +120,7 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             createdCharacter.addAbilityScoreModifier(e.getKey(), e.getValue(), "BACKGROUND:" + playerBackground.getId());
         }
 
-        Set<Skill> classSkills = request.classSkills() == null ? Set.of() : request.classSkills();
-        for (Skill skill : classSkills) {
+        for (Skill skill : request.classSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "CLASS:" + playerClass.getId());
         }
 

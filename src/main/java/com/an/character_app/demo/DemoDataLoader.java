@@ -9,6 +9,7 @@ import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.Skill;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,6 +28,7 @@ public class DemoDataLoader implements ApplicationRunner {
     private final PlayerCharacterService characterService;
 
     @Override
+    @NullMarked
     public void run(ApplicationArguments args) {
         if (characterRepository.count() > 0) {
             return;
@@ -47,7 +49,7 @@ public class DemoDataLoader implements ApplicationRunner {
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "chain-mail", null,
-                Set.of(Skill.PERCEPTION));
+                Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING));
     }
 
     private CreateCharacterRequest demoWizard() {

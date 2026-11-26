@@ -18,6 +18,8 @@ import com.an.character_app.rules.repository.SpeciesDefRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -26,6 +28,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -87,6 +90,29 @@ class PlayerCharacterServiceImplTest {
         when(classDefRepository.findById("fighter")).thenReturn(Optional.of(mock(ClassDef.class)));
         when(speciesDefRepository.findById("human")).thenReturn(Optional.of(mock(SpeciesDef.class)));
         when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(background));
+    }
+
+    private void stubLookupsWithClassSkillOptions(int numOfSkills, Skill... options) {
+        ClassDef dndClass = mock(ClassDef.class);
+
+        BackgroundDef soldier = mock(BackgroundDef.class);
+        when(soldier.getAbilityOptions()).thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        lenient().when(soldier.getSkills()).thenReturn(Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
+
+        lenient().when(dndClass.getSkillOptions()).thenReturn(Set.of(options));
+        when(dndClass.getSkillChoiceCount()).thenReturn(numOfSkills);
+        when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(soldier));
+        when(speciesDefRepository.findById("human")).thenReturn(Optional.of(mock(SpeciesDef.class)));
+        when(classDefRepository.findById("fighter")).thenReturn(Optional.of(dndClass));
+    }
+
+    private CreateCharacterRequest requestWithClassSkills(Set<Skill> classSKills) {
+        return new CreateCharacterRequest(
+                "Test", 1,
+                new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
+                "fighter", "human", "soldier",
+                Map.of(Ability.STR, 2, Ability.CON, 1),
+                null, null, classSKills);
     }
 
     private CreateCharacterRequest requestWithBonuses(Map<Ability, Integer> bonuses) {
@@ -227,6 +253,8 @@ class PlayerCharacterServiceImplTest {
         when(fighter.getName()).thenReturn("Fighter");
         when(fighter.getHitDie()).thenReturn(10);
         when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        when(fighter.getSkillOptions()).thenReturn(Set.of(Skill.ATHLETICS, Skill.ACROBATICS, Skill.ANIMAL_HANDLING));
+        when(fighter.getSkillChoiceCount()).thenReturn(2);
 
         SpeciesDef human = mock(SpeciesDef.class);
         when(human.getName()).thenReturn("Human");
@@ -247,7 +275,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, Set.of(Skill.STEALTH));
+                null, null, Set.of(Skill.ANIMAL_HANDLING, Skill.ACROBATICS));
 
         CharacterSheetResponse sheet = service.createCharacter(request);
 
@@ -263,13 +291,46 @@ class PlayerCharacterServiceImplTest {
                         tuple(Ability.CON, 1, "BACKGROUND:soldier"));
         assertThat(saved.getSkillProficiencyGrants())
                 .extracting(SkillProficiencyGrant::getSkill, SkillProficiencyGrant::getSource)
-                .containsExactly(tuple(Skill.STEALTH, "CLASS:fighter"));
+                .containsExactlyInAnyOrder(tuple(Skill.ANIMAL_HANDLING, "CLASS:fighter"), tuple(Skill.ACROBATICS, "CLASS:fighter"));
 
         assertThat(sheet.name()).isEqualTo("Test");
         assertThat(sheet.className()).isEqualTo("Fighter");
         assertThat(sheet.calculatedStats().abilities().get(Ability.STR).total()).isEqualTo(17);
         assertThat(sheet.calculatedStats().skills().get(Skill.ATHLETICS)).isEqualTo(6);
-        assertThat(sheet.calculatedStats().skills().get(Skill.STEALTH)).isEqualTo(5);
+        assertThat(sheet.calculatedStats().skills().get(Skill.ACROBATICS)).isEqualTo(5);
+    }
+
+    @ParameterizedTest(name = "allowed={0}, selected={1}")
+    @CsvSource({
+            "2, 1",
+            "2, 3"
+    })
+    void rejectsInvalidNumberOfClassSkills(int skillChoiceCount, int selected) {
+        List<Skill> availableOptions = List.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.ANIMAL_HANDLING);
+        stubLookupsWithClassSkillOptions(skillChoiceCount, availableOptions.toArray(Skill[]::new));
+
+        Set<Skill> chosenSkills = Set.copyOf(availableOptions.subList(0, selected));
+
+        assertThatThrownBy(() -> service.createCharacter(requestWithClassSkills(chosenSkills)))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("number of skills you can select: " + skillChoiceCount);
+    }
+
+    @Test
+    void rejectsInvalidClassSkill() {
+        stubLookupsWithClassSkillOptions(2, Skill.ACROBATICS, Skill.ATHLETICS, Skill.ANIMAL_HANDLING);
+
+        assertThatThrownBy(()-> service.createCharacter(requestWithClassSkills(Set.of(Skill.ARCANA, Skill.ACROBATICS))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("ARCANA");
+    }
+
+    @Test
+    void rejectsOverlappingClassBackgroundSkills() {
+        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
+        assertThatThrownBy(()->service.createCharacter(requestWithClassSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("ATHLETICS");
     }
 
     @Test
