@@ -42,7 +42,8 @@ mvn verify
 
 ### Example
 
-`POST /characters`
+<details>
+<summary><code>POST /characters</code></summary>
 
 ```json
 {
@@ -64,17 +65,17 @@ mvn verify
     "CON": 1
   },
   "armorId": "chain-mail",
-  "classSkills": [
-    "PERCEPTION"
-  ]
+  "classSkills": ["PERCEPTION", "ACROBATICS"]
 }
 ```
+</details>
 
-Response (abbreviated):
+<details>
+<summary><b>Response</b></summary>
 
 ```json
 {
-  "id": 2,
+  "id": 3,
   "name": "Tom",
   "level": 5,
   "speciesName": "Human",
@@ -88,24 +89,76 @@ Response (abbreviated):
         "bonus": 2,
         "total": 17,
         "modifier": 3
+      },
+      "DEX": {
+        "base": 14,
+        "bonus": 0,
+        "total": 14,
+        "modifier": 2
+      },
+      "CON": {
+        "base": 13,
+        "bonus": 1,
+        "total": 14,
+        "modifier": 2
+      },
+      "INT": {
+        "base": 12,
+        "bonus": 0,
+        "total": 12,
+        "modifier": 1
+      },
+      "WIS": {
+        "base": 10,
+        "bonus": 0,
+        "total": 10,
+        "modifier": 0
+      },
+      "CHA": {
+        "base": 8,
+        "bonus": 0,
+        "total": 8,
+        "modifier": -1
       }
     },
     "skills": {
       "ATHLETICS": 6,
-      "ACROBATICS": 2,
-      "SLEIGHT_OF_HAND": 2
+      "ACROBATICS": 5,
+      "SLEIGHT_OF_HAND": 2,
+      "STEALTH": 2,
+      "ARCANA": 1,
+      "HISTORY": 1,
+      "INVESTIGATION": 1,
+      "NATURE": 1,
+      "RELIGION": 1,
+      "ANIMAL_HANDLING": 0,
+      "INSIGHT": 0,
+      "MEDICINE": 0,
+      "PERCEPTION": 3,
+      "SURVIVAL": 0,
+      "DECEPTION": -1,
+      "INTIMIDATION": 2,
+      "PERFORMANCE": -1,
+      "PERSUASION": -1
     },
     "savingThrows": {
       "STR": 6,
-      "DEX": 2
+      "DEX": 2,
+      "CON": 5,
+      "INT": 1,
+      "WIS": 0,
+      "CHA": -1
     },
     "maxHp": 44,
     "armorClass": 16,
     "initiative": 2,
-    "passivePerception": 13
+    "passivePerception": 13,
+    "passiveInsight": 10,
+    "passiveInvestigation": 11
   }
 }
 ```
+</details>
 
 Errors use the standard `ProblemDetail` format. Invalid input returns `400` with
 per-field messages; unknown ids return `404`.
@@ -122,12 +175,10 @@ com.an.character_app
 └── exception/    custom exceptions and the global handler
 ```
 
-Dependency rule: `rules` depends on nothing, `calc` depends on nothing, and
-`character` depends on both. `calc` never sees a JPA entity; the `character` layer
-converts an entity into a plain `CharacterInput` record first.
-Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums, 
-never on entities, JPA or Spring. The `character` layer converts a `PlayerCharacter` into 
-a plain `CharacterInput` record before calling it.
+Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums
+(never on entities, JPA or Spring), and `character` depends on both. The `calculator` layer
+converts a `PlayerCharacter` into a plain `CharacterInput` record before calling the calculator.
+
 
 ## Rules data
 
@@ -170,22 +221,24 @@ new migration. Every row has a stable slug id (`fighter`, `chain-mail`) and a `s
   the service, `MockMvc` tests for the controller, repository tests and an end-to-end
   test against a real PostgreSQL via Testcontainers.
 
-## Not implemented yet
+**Known limitations**
 
-- Validation of class skill choices (the class's skill list and pick count)
-- Multiclassing (the HP calculation is already written to support it)
-- Feats, spells, equipment and inventory, features and class abilities
-- Updating a character (`PUT`)
-- Authentication and per-user ownership of characters
-- Armor strength requirements, stealth disadvantage, and class armor training are stored or planned but not enforced.
+- When a class and a background grant the same skill, the request is rejected. The proper rule
+  lets the player pick a replacement skill.
+- Armor strength requirements, stealth disadvantage and class armor training are stored or
+  planned but not enforced.
+- No multiclassing (the HP calculation is already written to support it).
+- No update endpoint (`PUT`), authentication, or per-user ownership of characters.
 
-## Roadmap
+**Planned**
 
-1. Full 2024 PHB classes, species and backgrounds as seed data
-2. Class skill options and validation
-3. Origin feats from backgrounds
-4. Equipment and inventory
-5. Spell lists
+1. Class armor, weapon and tool proficiencies
+2. Origin feats linked to backgrounds
+3. Spellcasting: spell slots, spell save DC and attack bonus
+4. Class features and subclasses
+5. Equipment, inventory and character state (current HP, spent slots)
+6. Spell lists
+7. More classes, species and backgrounds from the SRD
 
 ## License and attribution
 
