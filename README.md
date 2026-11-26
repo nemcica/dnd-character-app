@@ -166,74 +166,209 @@ per-field messages; unknown ids return `404`.
 ## Architecture
 
 
-```mermaid
-flowchart TD
-    Client["HTTP Client / Swagger UI"]
 
-    subgraph CrossCutting["Cross-Cutting and Startup"]
+```mermaid
+flowchart TB
+
+    subgraph APP["Application Startup"]
+        Main["CharacterAppApplication"]
         OpenApi["OpenApiConfig"]
-        ExHandler["GlobalExceptionHandler"]
         Demo["DemoDataLoader"]
     end
 
-    subgraph CharacterDomain["Character Core Domain"]
-        CharCtrl["Controller"]
-        CharDto["DTO"]
-        CharSvc["Service"]
-        CharMap["Mapper"]
-        CharModel["Model"]
-        CharRepo["Repository"]
+    subgraph CROSS["Exception Handling"]
+        Handler["GlobalExceptionHandler"]
+        Invalid["InvalidCharacterException"]
     end
 
-    subgraph CalcEngine["Calculation Engine"]
-        CalcMap["CharacterInputMapper"]
-        CalcIn["CharacterInput"]
-        CalcCore["CharacterCalculator"]
-        CalcOut["CalculatedStats and Breakdown"]
+    subgraph CHARACTER["Character Domain"]
+        direction TB
+
+        CharController["controller"]
+        CharDTO["dto"]
+        CharMapper["mapper"]
+        CharService["service"]
+        CharModel["model"]
+        CharRepository["repository"]
     end
 
-    subgraph RulesDomain["Rules Reference Data"]
-        RulesCtrl["Controller"]
-        RulesDto["DTO"]
-        RulesMap["Mapper"]
-        RulesModel["Model"]
-        RulesRepo["Repository"]
+    subgraph CALC["Calculation Engine"]
+        direction TB
+
+        InputMapper["CharacterInputMapper"]
+        Input["CharacterInput"]
+        Calculator["CharacterCalculator"]
+
+        subgraph OUTPUT["Calculation Results"]
+            Stats["CalculatedStats"]
+            Breakdown["AbilityBreakdown"]
+        end
+    end
+
+    subgraph RULES["Rules Reference Domain"]
+        direction TB
+
+        RulesController["controller"]
+        RulesDTO["dto"]
+        RulesMapper["mapper"]
+        RulesModel["model"]
+        RulesRepository["repository"]
     end
 
     DB[("PostgreSQL")]
 
-    Client --> CharCtrl
-    Client --> RulesCtrl
+    %% Application
+    Main -.-> OpenApi
+    Main -.-> Demo
 
-    CharCtrl -.-> OpenApi
-    CharCtrl -.-> ExHandler
-    Demo --> CharRepo
+    %% Client Entry Points
+    Client["HTTP Client / Swagger UI"]
+    Client --> CharController
+    Client --> RulesController
 
-    CharCtrl --> CharDto
-    CharCtrl --> CharSvc
-    CharSvc --> CharMap
-    CharSvc --> CharRepo
-    CharSvc --> RulesRepo
+    %% Character Domain
+    CharController --> CharDTO
+    CharController --> CharService
 
-    CharMap --> CharModel
-    CharRepo --> CharModel
+    CharService --> CharMapper
+    CharService --> CharRepository
+    CharService --> RulesRepository
+    CharService --> InputMapper
 
-    CharSvc --> CalcMap
-    CharModel --> CalcMap
-    CalcMap --> CalcIn
-    CalcIn --> CalcCore
-    CalcCore --> CalcOut
-    CalcOut --> CharDto
+    CharMapper --> CharModel
+    CharRepository --> CharModel
 
-    RulesCtrl --> RulesDto
-    RulesCtrl --> RulesRepo
-    RulesCtrl --> RulesMap
-    RulesMap --> RulesModel
-    RulesRepo --> RulesModel
+    %% Calculation Engine
+    CharModel --> InputMapper
+    InputMapper --> Input
+    Input --> Calculator
+    Calculator --> Stats
+    Calculator --> Breakdown
 
-    CharRepo --> DB
-    RulesRepo --> DB
+    Stats --> CharDTO
+    Breakdown --> CharDTO
+
+    %% Rules Domain
+    RulesController --> RulesDTO
+    RulesController --> RulesMapper
+    RulesController --> RulesRepository
+
+    RulesMapper --> RulesModel
+    RulesRepository --> RulesModel
+
+    %% Exceptions
+    Handler -.-> Invalid
+    CharService -.-> Handler
+
+    %% Demo Data
+    Demo --> CharRepository
+
+    %% Persistence
+    CharRepository --> DB
+    RulesRepository --> DB
 ```
+
+```mermaid
+flowchart TB
+
+    subgraph APP["Application Startup"]
+        Main["CharacterAppApplication"]
+        OpenApi["OpenApiConfig"]
+        Demo["DemoDataLoader"]
+    end
+
+    subgraph CROSS["Exception Handling"]
+        Handler["GlobalExceptionHandler"]
+        Invalid["InvalidCharacterException"]
+    end
+
+    subgraph CHARACTER["Character Domain"]
+        direction TB
+
+        CharController["controller"]
+        CharDTO["dto"]
+        CharMapper["mapper"]
+        CharService["service"]
+        CharModel["model"]
+        CharRepository["repository"]
+    end
+
+    subgraph CALC["Calculation Engine"]
+        direction TB
+
+        InputMapper["CharacterInputMapper"]
+        Input["CharacterInput"]
+        Calculator["CharacterCalculator"]
+
+        subgraph OUTPUT["Calculation Results"]
+            Stats["CalculatedStats"]
+            Breakdown["AbilityBreakdown"]
+        end
+    end
+
+    subgraph RULES["Rules Reference Domain"]
+        direction TB
+
+        RulesController["controller"]
+        RulesDTO["dto"]
+        RulesMapper["mapper"]
+        RulesModel["model"]
+        RulesRepository["repository"]
+    end
+
+    DB[("PostgreSQL")]
+
+    %% Application
+    Main -.-> OpenApi
+    Main -.-> Demo
+
+    %% Client Entry Points
+    Client["HTTP Client / Swagger UI"]
+    Client --> CharController
+    Client --> RulesController
+
+    %% Character Domain
+    CharController --> CharDTO
+    CharController --> CharService
+
+    CharService --> CharMapper
+    CharService --> CharRepository
+    CharService --> RulesRepository
+    CharService --> InputMapper
+
+    CharMapper --> CharModel
+    CharRepository --> CharModel
+
+    %% Calculation Engine
+    CharModel --> InputMapper
+    InputMapper --> Input
+    Input --> Calculator
+    Calculator --> Stats
+    Calculator --> Breakdown
+
+    Stats --> CharDTO
+    Breakdown --> CharDTO
+
+    %% Rules Domain
+    RulesController --> RulesDTO
+    RulesController --> RulesMapper
+    RulesController --> RulesRepository
+
+    RulesMapper --> RulesModel
+    RulesRepository --> RulesModel
+
+    %% Exceptions
+    Handler -.-> Invalid
+    CharService -.-> Handler
+
+    %% Demo Data
+    Demo --> CharRepository
+
+    %% Persistence
+    CharRepository --> DB
+    RulesRepository --> DB
+```
+
 
 
 Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums
