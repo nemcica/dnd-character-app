@@ -165,15 +165,76 @@ per-field messages; unknown ids return `404`.
 
 ## Architecture
 
+
+```mermaid
+flowchart TD
+    Client["HTTP Client / Swagger UI"]
+
+    subgraph CrossCutting["Cross-Cutting and Startup"]
+        OpenApi["OpenApiConfig"]
+        ExHandler["GlobalExceptionHandler"]
+        Demo["DemoDataLoader"]
+    end
+
+    subgraph CharacterDomain["Character Core Domain"]
+        CharCtrl["Controller"]
+        CharDto["DTO"]
+        CharSvc["Service"]
+        CharMap["Mapper"]
+        CharModel["Model"]
+        CharRepo["Repository"]
+    end
+
+    subgraph CalcEngine["Calculation Engine"]
+        CalcMap["CharacterInputMapper"]
+        CalcIn["CharacterInput"]
+        CalcCore["CharacterCalculator"]
+        CalcOut["CalculatedStats and Breakdown"]
+    end
+
+    subgraph RulesDomain["Rules Reference Data"]
+        RulesCtrl["Controller"]
+        RulesDto["DTO"]
+        RulesMap["Mapper"]
+        RulesModel["Model"]
+        RulesRepo["Repository"]
+    end
+
+    DB[("PostgreSQL")]
+
+    Client --> CharCtrl
+    Client --> RulesCtrl
+
+    CharCtrl -.-> OpenApi
+    CharCtrl -.-> ExHandler
+    Demo --> CharRepo
+
+    CharCtrl --> CharDto
+    CharCtrl --> CharSvc
+    CharSvc --> CharMap
+    CharSvc --> CharRepo
+    CharSvc --> RulesRepo
+
+    CharMap --> CharModel
+    CharRepo --> CharModel
+
+    CharSvc --> CalcMap
+    CharModel --> CalcMap
+    CalcMap --> CalcIn
+    CalcIn --> CalcCore
+    CalcCore --> CalcOut
+    CalcOut --> CharDto
+
+    RulesCtrl --> RulesDto
+    RulesCtrl --> RulesRepo
+    RulesCtrl --> RulesMap
+    RulesMap --> RulesModel
+    RulesRepo --> RulesModel
+
+    CharRepo --> DB
+    RulesRepo --> DB
 ```
-com.an.character_app
-├── rules/        reference data (classes, species, backgrounds, armor): read-only entities, DTOs, controller
-├── character/    player data: entities, repository, service, controller, input mapper
-├── calc/         pure Java calculations: no Spring, no JPA
-├── config/       Swagger configuration
-├── demo/         demo characters
-└── exception/    custom exceptions and the global handler
-```
+
 
 Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums
 (never on entities, JPA or Spring), and `character` depends on both. The `calculator` layer
@@ -221,24 +282,14 @@ new migration. Every row has a stable slug id (`fighter`, `chain-mail`) and a `s
   the service, `MockMvc` tests for the controller, repository tests and an end-to-end
   test against a real PostgreSQL via Testcontainers.
 
-**Known limitations**
+## Roadmap
 
-- When a class and a background grant the same skill, the request is rejected. The proper rule
-  lets the player pick a replacement skill.
-- Armor strength requirements, stealth disadvantage and class armor training are stored or
-  planned but not enforced.
-- No multiclassing (the HP calculation is already written to support it).
-- No update endpoint (`PUT`), authentication, or per-user ownership of characters.
+Planned work and known limitations are tracked as
+[GitHub issues](https://github.com/nemcica/dnd-character-app/issues) and on the
+[project board](https://github.com/users/nemcica/projects/3).
 
-**Planned**
-
-1. Class armor, weapon and tool proficiencies
-2. Origin feats linked to backgrounds
-3. Spellcasting: spell slots, spell save DC and attack bonus
-4. Class features and subclasses
-5. Equipment, inventory and character state (current HP, spent slots)
-6. Spell lists
-7. More classes, species and backgrounds from the SRD
+The main gaps right now: no spells or class features yet, no multiclassing, no update
+endpoint, and no authentication.
 
 ## License and attribution
 
