@@ -191,7 +191,6 @@ flowchart TD
     calculator --> enums
     rulesData --> enums
     repository --> db[(PostgreSQL)]
-    repository -.-> db
 ```
 
 Dependency rule: `calc` depends only on the shared enums, never on entities, JPA or Spring. The `character`
