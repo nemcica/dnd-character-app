@@ -161,16 +161,9 @@ Soldier, Acolyte and Criminal; four armors and a shield. Rules live in Flyway mi
 
 ## Not implemented yet
 
-- Validation of class skill choices (the class's skill list and pick count)
-- Multiclassing (the HP calculation is already written to support it)
+- Full class list, species, backgrounds
+- Multi-classing (the HP calculation is already written to support it)
 - Feats, spells, equipment and inventory, features and class abilities
 - Updating a character (`PUT`)
 - Authentication and per-user ownership of characters
 
-## Roadmap
-
-1. Full 2024 PHB classes, species and backgrounds as seed data
-2. Class skill options and validation
-3. Origin feats from backgrounds
-4. Equipment and inventory
-5. Spell lists

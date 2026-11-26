@@ -37,6 +37,7 @@ public record CreateCharacterRequest(
 
         String shieldId,
 
-        Set<Skill> classSkills
+        @NotEmpty
+        Set<@NotNull Skill> classSkills
 ) {
 }

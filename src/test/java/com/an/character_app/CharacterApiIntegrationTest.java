@@ -37,7 +37,7 @@ public class CharacterApiIntegrationTest {
               "backgroundId": "soldier",
               "backgroundAbilityBonuses": { "STR": 2, "CON": 1 },
               "armorId": "chain-mail",
-              "classSkills": ["PERCEPTION"]
+              "classSkills": ["ANIMAL_HANDLING", "PERCEPTION"]
             }
             """;
     @Container

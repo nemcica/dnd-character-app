@@ -28,4 +28,11 @@ public class ClassDef {
     @Enumerated(EnumType.STRING)
     private Set<Ability> savingThrows;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "class_def_skill_options", joinColumns = @JoinColumn(name = "class_def_id"))
+    @Column(name = "skill")
+    @Enumerated(EnumType.STRING)
+    private Set<Skill> skillOptions;
+
+    private int skillChoiceCount;
 }

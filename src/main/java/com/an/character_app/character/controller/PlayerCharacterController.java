@@ -49,7 +49,7 @@ public class PlayerCharacterController {
                       "backgroundId": "criminal",
                       "backgroundAbilityBonuses": { "DEX": 2, "INT": 1 },
                       "armorId": "leather",
-                      "classSkills": ["ATHLETICS"]
+                      "classSkills": ["ATHLETICS", "ACROBATICS", "STEALTH", "DECEPTION"]
                     }
                     """)))
     @PostMapping
