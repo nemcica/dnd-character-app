@@ -165,216 +165,39 @@ per-field messages; unknown ids return `404`.
 
 ## Architecture
 
-
-
 ```mermaid
-flowchart TB
+flowchart TD
+    client([HTTP client])
 
-    subgraph APP["Application Startup"]
-        Main["CharacterAppApplication"]
-        OpenApi["OpenApiConfig"]
-        Demo["DemoDataLoader"]
+    subgraph character["character"]
+        controller[Controller] --> service[Service]
+        service --> repository[Repositories]
+        service --> inputMapper[CharacterInput mapper]
     end
 
-    subgraph CROSS["Exception Handling"]
-        Handler["GlobalExceptionHandler"]
-        Invalid["InvalidCharacterException"]
+    subgraph calc["calc (pure Java)"]
+        calculator[CharacterCalculator]
     end
 
-    subgraph CHARACTER["Character Domain"]
-        direction TB
-
-        CharController["controller"]
-        CharDTO["dto"]
-        CharMapper["mapper"]
-        CharService["service"]
-        CharModel["model"]
-        CharRepository["repository"]
+    subgraph rules["rules"]
+        rulesData[Entities, repositories, controller]
+        enums[Shared enums: Ability, Skill, ArmorCategory, ProficiencyLevel]
     end
 
-    subgraph CALC["Calculation Engine"]
-        direction TB
-
-        InputMapper["CharacterInputMapper"]
-        Input["CharacterInput"]
-        Calculator["CharacterCalculator"]
-
-        subgraph OUTPUT["Calculation Results"]
-            Stats["CalculatedStats"]
-            Breakdown["AbilityBreakdown"]
-        end
-    end
-
-    subgraph RULES["Rules Reference Domain"]
-        direction TB
-
-        RulesController["controller"]
-        RulesDTO["dto"]
-        RulesMapper["mapper"]
-        RulesModel["model"]
-        RulesRepository["repository"]
-    end
-
-    DB[("PostgreSQL")]
-
-    %% Application
-    Main -.-> OpenApi
-    Main -.-> Demo
-
-    %% Client Entry Points
-    Client["HTTP Client / Swagger UI"]
-    Client --> CharController
-    Client --> RulesController
-
-    %% Character Domain
-    CharController --> CharDTO
-    CharController --> CharService
-
-    CharService --> CharMapper
-    CharService --> CharRepository
-    CharService --> RulesRepository
-    CharService --> InputMapper
-
-    CharMapper --> CharModel
-    CharRepository --> CharModel
-
-    %% Calculation Engine
-    CharModel --> InputMapper
-    InputMapper --> Input
-    Input --> Calculator
-    Calculator --> Stats
-    Calculator --> Breakdown
-
-    Stats --> CharDTO
-    Breakdown --> CharDTO
-
-    %% Rules Domain
-    RulesController --> RulesDTO
-    RulesController --> RulesMapper
-    RulesController --> RulesRepository
-
-    RulesMapper --> RulesModel
-    RulesRepository --> RulesModel
-
-    %% Exceptions
-    Handler -.-> Invalid
-    CharService -.-> Handler
-
-    %% Demo Data
-    Demo --> CharRepository
-
-    %% Persistence
-    CharRepository --> DB
-    RulesRepository --> DB
+    client --> controller
+    client --> rulesData
+    service --> rulesData
+    service --> calculator
+    calculator --> enums
+    rulesData --> enums
+    repository --> db[(PostgreSQL)]
+    repository -.-> db
 ```
 
-```mermaid
-flowchart TB
-
-    subgraph APP["Application Startup"]
-        Main["CharacterAppApplication"]
-        OpenApi["OpenApiConfig"]
-        Demo["DemoDataLoader"]
-    end
-
-    subgraph CROSS["Exception Handling"]
-        Handler["GlobalExceptionHandler"]
-        Invalid["InvalidCharacterException"]
-    end
-
-    subgraph CHARACTER["Character Domain"]
-        direction TB
-
-        CharController["controller"]
-        CharDTO["dto"]
-        CharMapper["mapper"]
-        CharService["service"]
-        CharModel["model"]
-        CharRepository["repository"]
-    end
-
-    subgraph CALC["Calculation Engine"]
-        direction TB
-
-        InputMapper["CharacterInputMapper"]
-        Input["CharacterInput"]
-        Calculator["CharacterCalculator"]
-
-        subgraph OUTPUT["Calculation Results"]
-            Stats["CalculatedStats"]
-            Breakdown["AbilityBreakdown"]
-        end
-    end
-
-    subgraph RULES["Rules Reference Domain"]
-        direction TB
-
-        RulesController["controller"]
-        RulesDTO["dto"]
-        RulesMapper["mapper"]
-        RulesModel["model"]
-        RulesRepository["repository"]
-    end
-
-    DB[("PostgreSQL")]
-
-    %% Application
-    Main -.-> OpenApi
-    Main -.-> Demo
-
-    %% Client Entry Points
-    Client["HTTP Client / Swagger UI"]
-    Client --> CharController
-    Client --> RulesController
-
-    %% Character Domain
-    CharController --> CharDTO
-    CharController --> CharService
-
-    CharService --> CharMapper
-    CharService --> CharRepository
-    CharService --> RulesRepository
-    CharService --> InputMapper
-
-    CharMapper --> CharModel
-    CharRepository --> CharModel
-
-    %% Calculation Engine
-    CharModel --> InputMapper
-    InputMapper --> Input
-    Input --> Calculator
-    Calculator --> Stats
-    Calculator --> Breakdown
-
-    Stats --> CharDTO
-    Breakdown --> CharDTO
-
-    %% Rules Domain
-    RulesController --> RulesDTO
-    RulesController --> RulesMapper
-    RulesController --> RulesRepository
-
-    RulesMapper --> RulesModel
-    RulesRepository --> RulesModel
-
-    %% Exceptions
-    Handler -.-> Invalid
-    CharService -.-> Handler
-
-    %% Demo Data
-    Demo --> CharRepository
-
-    %% Persistence
-    CharRepository --> DB
-    RulesRepository --> DB
-```
-
-
-
-Dependency rule: `rules` depends on nothing, `calc` depends only on the shared rules enums
-(never on entities, JPA or Spring), and `character` depends on both. The `calculator` layer
-converts a `PlayerCharacter` into a plain `CharacterInput` record before calling the calculator.
-
+Dependency rule: `calc` depends only on the shared enums, never on entities, JPA or Spring. The `character`
+layer turns a `PlayerCharacter` into a plain `CharacterInput` record before calling the
+calculator. The `config`, `demo` and `exception` packages hold Swagger setup, demo data and
+the global error handler.
 
 ## Rules data
 
