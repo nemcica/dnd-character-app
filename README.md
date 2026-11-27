@@ -65,7 +65,8 @@ mvn verify
     "CON": 1
   },
   "armorId": "chain-mail",
-  "classSkills": ["PERCEPTION", "ACROBATICS"]
+  "classSkills": ["PERCEPTION", "ACROBATICS"],
+  "backgroundTool": "DICE"
 }
 ```
 </details>
@@ -154,7 +155,8 @@ mvn verify
     "initiative": 2,
     "passivePerception": 13,
     "passiveInsight": 10,
-    "passiveInvestigation": 11
+    "passiveInvestigation": 11,
+    "toolProficiencies": ["DICE"]
   }
 }
 ```

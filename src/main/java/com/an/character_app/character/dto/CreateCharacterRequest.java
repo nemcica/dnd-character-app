@@ -2,6 +2,7 @@ package com.an.character_app.character.dto;
 
 import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.Skill;
+import com.an.character_app.rules.model.Tool;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -38,6 +39,8 @@ public record CreateCharacterRequest(
         String shieldId,
 
         @NotEmpty
-        Set<@NotNull Skill> classSkills
+        Set<@NotNull Skill> classSkills,
+
+        Tool backgroundTool
 ) {
 }

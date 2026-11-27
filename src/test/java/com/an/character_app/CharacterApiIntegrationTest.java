@@ -37,7 +37,8 @@ public class CharacterApiIntegrationTest {
               "backgroundId": "soldier",
               "backgroundAbilityBonuses": { "STR": 2, "CON": 1 },
               "armorId": "chain-mail",
-              "classSkills": ["ANIMAL_HANDLING", "PERCEPTION"]
+              "classSkills": ["ANIMAL_HANDLING", "PERCEPTION"],
+              "backgroundTool": "DICE"
             }
             """;
     @Container
@@ -133,5 +134,50 @@ public class CharacterApiIntegrationTest {
         mockMvc.perform(delete("/characters/" + id)).andExpect(status().isNoContent());
         mockMvc.perform(get("/characters/" + id)).andExpect(status().isNotFound());
         assertThat(playerCharacterRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void soldierWithChosenGamingSetShowsToolOnSheet() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.toolProficiencies.length()").value(1))
+                .andExpect(jsonPath("$.toolProficiencies[0]").value("DICE"));
+    }
+
+    @Test
+    void soldierWithoutToolIsRejectedAndSavesNothing() throws Exception {
+        String body = VALID_BODY.replace(",\n" +
+                "  \"backgroundTool\": \"DICE\"", "");
+
+        mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(containsString("requires you to select")));
+
+        assertThat(playerCharacterRepository.count()).isZero();
+    }
+
+    @Test
+    void acolyteGetsFixedToolWithoutSendingOne() throws Exception {
+        String body = VALID_BODY
+                .replace("\"backgroundId\": \"soldier\"", "\"backgroundId\": \"acolyte\"")
+                .replace("{ \"STR\": 2, \"CON\": 1 }", "{ \"WIS\": 2, \"INT\": 1 }")
+                .replace("\"backgroundTool\": \"DICE\"", "\"backgroundTool\": null");
+
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(jsonPath("$.toolProficiencies[0]").value("CALLIGRAPHERS_SUPPLIES"));
     }
 }
