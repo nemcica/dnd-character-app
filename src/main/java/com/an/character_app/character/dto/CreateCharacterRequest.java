@@ -41,6 +41,8 @@ public record CreateCharacterRequest(
         @NotEmpty
         Set<@NotNull Skill> classSkills,
 
-        Tool backgroundTool
+        Tool backgroundTool,
+
+        Set<@NotNull Tool> classTools
 ) {
 }

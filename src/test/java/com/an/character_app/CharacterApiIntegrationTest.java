@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
@@ -41,6 +42,23 @@ public class CharacterApiIntegrationTest {
               "backgroundTool": "DICE"
             }
             """;
+
+    private static final String ROGUE_CRIMINAL_BODY = """
+            {
+              "name": "Sly",
+              "level": 3,
+              "baseAbilityScores": {
+                "strength": 10, "dexterity": 15, "constitution": 14,
+                "intelligence": 12, "wisdom": 10, "charisma": 8
+              },
+              "classId": "rogue",
+              "speciesId": "human",
+              "backgroundId": "criminal",
+              "backgroundAbilityBonuses": { "DEX": 2, "CON": 1 },
+              "classSkills": ["ACROBATICS", "ATHLETICS", "DECEPTION", "INSIGHT"]
+            }
+            """;
+
     @Container
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
@@ -48,6 +66,8 @@ public class CharacterApiIntegrationTest {
     MockMvc mockMvc;
     @Autowired
     PlayerCharacterRepository playerCharacterRepository;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @AfterEach
     void cleanUp() {
@@ -179,5 +199,23 @@ public class CharacterApiIntegrationTest {
 
         mockMvc.perform(get(created.getResponse().getHeader("Location")))
                 .andExpect(jsonPath("$.toolProficiencies[0]").value("CALLIGRAPHERS_SUPPLIES"));
+    }
+
+    @Test
+    void rogueWithCriminalBackgroundStoresThievesToolsTwiceButListsItOnce() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ROGUE_CRIMINAL_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.toolProficiencies.length()").value(1))
+                .andExpect(jsonPath("$.toolProficiencies[0]").value("THIEVES_TOOLS"));
+
+        Integer rows = jdbcTemplate.queryForObject(
+                "select count(*) from tool_proficiency_grant where tool = 'THIEVES_TOOLS'", Integer.class);
+        assertThat(rows).isEqualTo(2);
     }
 }

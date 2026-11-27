@@ -62,7 +62,7 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
                 foundCharacter.getBackground().getName(),
                 stats,
                 toolProficiencies
-                );
+        );
     }
 
     @Override
@@ -124,6 +124,22 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             throw new InvalidCharacterException("You have to select a tool from: " + playerBackground.getToolCategory() + ", but you selected one from: " + request.backgroundTool().getToolCategory());
         }
 
+        Set<Tool> classTools = request.classTools() == null ? Set.of() : request.classTools();
+        Set<ToolCategory> allowedCategories = playerClass.getToolChoiceCategories();
+        int requiredClassTools = allowedCategories.isEmpty() ? 0 : playerClass.getToolChoiceCount();
+
+        if (classTools.size() != requiredClassTools) {
+            throw new InvalidCharacterException(
+                    "Class " + playerClass.getName() + " requires " + requiredClassTools
+                            + " tool proficiency choice(s), but " + classTools.size() + " were provided.");
+        }
+        for (Tool tool : classTools) {
+            if (!allowedCategories.contains(tool.getToolCategory())) {
+                throw new InvalidCharacterException(
+                        "Tool " + tool + " is not in an allowed category for class " + playerClass.getName()
+                                + ". Allowed: " + allowedCategories);
+            }
+        }
 
         createdCharacter.setName(request.name());
         createdCharacter.setLevel(request.level());
@@ -147,6 +163,16 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         }
 
         createdCharacter.addToolProficiencyGrant(request.backgroundTool() == null ? playerBackground.getTool() : request.backgroundTool(), "BACKGROUND:" + playerBackground.getId());
+
+        for (Tool t : playerClass.getFixedToolProficiencies()) {
+            createdCharacter.addToolProficiencyGrant(t, "CLASS:" + playerClass.getId());
+        }
+
+        if (!classTools.isEmpty()) {
+            for (Tool t : classTools) {
+                createdCharacter.addToolProficiencyGrant(t, "CLASS:" + playerClass.getId());
+            }
+        }
 
         Long savedCharacterId = playerCharacterRepository.save(createdCharacter).getId();
 

@@ -51,7 +51,7 @@ public class DemoDataLoader implements ApplicationRunner {
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "chain-mail", null,
                 Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING),
-                Tool.DICE);
+                Tool.DICE, null);
     }
 
     private CreateCharacterRequest demoWizard() {
@@ -62,6 +62,6 @@ public class DemoDataLoader implements ApplicationRunner {
                 Map.of(Ability.INT, 2, Ability.WIS, 1),
                 null, null,
                 Set.of(Skill.ARCANA, Skill.INVESTIGATION),
-                null);
+                null, null);
     }
 }

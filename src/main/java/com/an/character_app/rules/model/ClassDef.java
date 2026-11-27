@@ -35,4 +35,18 @@ public class ClassDef {
     private Set<Skill> skillOptions;
 
     private int skillChoiceCount;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "class_def_fixed_tool", joinColumns = @JoinColumn(name = "class_def_id"))
+    @Column(name = "tool")
+    @Enumerated(EnumType.STRING)
+    private Set<Tool> fixedToolProficiencies;
+
+    private int toolChoiceCount;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "class_def_tool_category", joinColumns = @JoinColumn(name = "class_def_id"))
+    @Column(name = "tool_category")
+    @Enumerated(EnumType.STRING)
+    private Set<ToolCategory> toolChoiceCategories;
 }
