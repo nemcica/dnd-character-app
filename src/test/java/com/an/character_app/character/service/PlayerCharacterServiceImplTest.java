@@ -63,7 +63,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 classId, speciesId, backgroundId,
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, null, null);
+                null, null, null);
     }
 
     private void stubValidClassSpeciesBackground() {
@@ -81,7 +81,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                armorId, shieldId, null, null);
+                armorId, shieldId, null);
     }
 
     private void stubLookupsWithBackgroundOptions(Ability... options) {
@@ -112,7 +112,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, classSKills, null);
+                null, null, classSKills);
     }
 
     private CreateCharacterRequest requestWithBonuses(Map<Ability, Integer> bonuses) {
@@ -120,17 +120,7 @@ class PlayerCharacterServiceImplTest {
                 "Test", 1,
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
-                bonuses, null, null, null, null);
-    }
-
-    private CreateCharacterRequest requestWithSkills(Set<Skill> classSkills, Set<Skill> freeSkillChoices) {
-        return new CreateCharacterRequest(
-                "Test", 5,
-                new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
-                "fighter", "human", "soldier",
-                Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null,
-                classSkills, freeSkillChoices);
+                bonuses, null, null, null);
     }
 
     private void stubSavePersistsWithId(Long id) {
@@ -285,7 +275,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, Set.of(Skill.ANIMAL_HANDLING, Skill.ACROBATICS), null);
+                null, null, Set.of(Skill.ANIMAL_HANDLING, Skill.ACROBATICS));
 
         CharacterSheetResponse sheet = service.createCharacter(request);
 
@@ -336,111 +326,11 @@ class PlayerCharacterServiceImplTest {
     }
 
     @Test
-    void rejectsOverlapWithoutReplacementSkills() {
+    void rejectsOverlappingClassBackgroundSkills() {
         stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS), Set.of())))
+        assertThatThrownBy(()->service.createCharacter(requestWithClassSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS))))
                 .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("exactly 1")
-                .hasMessageContaining("0 were provided");
-    }
-
-    @Test
-    void rejectsOverlapWhenReplacementsAreMissingEntirely() {
-        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS), null)))
-                .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("exactly 1");
-    }
-
-    @Test
-    void rejectsTooManyReplacementSkills() {
-        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS),
-                        Set.of(Skill.STEALTH, Skill.ARCANA))))
-                .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("2 were provided");
-    }
-
-    @Test
-    void rejectsReplacementSkillsWhenThereIsNoOverlap() {
-        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.PERCEPTION, Skill.ACROBATICS),
-                        Set.of(Skill.STEALTH))))
-                .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("exactly 0");
-    }
-
-    @Test
-    void rejectsReplacementAlreadyGrantedByBackground() {
-        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS),
-                        Set.of(Skill.INTIMIDATION))))
-                .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("INTIMIDATION");
-    }
-
-    @Test
-    void rejectsReplacementEqualToRemainingClassPick() {
-        stubLookupsWithClassSkillOptions(2, Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS);
-
-        assertThatThrownBy(() -> service.createCharacter(
-                requestWithSkills(Set.of(Skill.ATHLETICS, Skill.ACROBATICS),
-                        Set.of(Skill.ACROBATICS))))
-                .isInstanceOf(InvalidCharacterException.class)
-                .hasMessageContaining("ACROBATICS");
-    }
-
-    @Test
-    void replacesOverlappingClassSkillWithFreeChoice() {
-        ClassDef fighter = mock(ClassDef.class);
-        when(fighter.getId()).thenReturn("fighter");
-        when(fighter.getName()).thenReturn("Fighter");
-        when(fighter.getHitDie()).thenReturn(10);
-        when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
-        when(fighter.getSkillChoiceCount()).thenReturn(2);
-        when(fighter.getSkillOptions()).thenReturn(
-                Set.of(Skill.ATHLETICS, Skill.PERCEPTION, Skill.ACROBATICS));
-
-        SpeciesDef human = mock(SpeciesDef.class);
-        when(human.getName()).thenReturn("Human");
-
-        BackgroundDef soldier = mock(BackgroundDef.class);
-        when(soldier.getId()).thenReturn("soldier");
-        when(soldier.getName()).thenReturn("Soldier");
-        when(soldier.getSkills()).thenReturn(Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
-        when(soldier.getAbilityOptions()).thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
-
-        when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
-        when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
-        when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(soldier));
-        stubSavePersistsWithId(1L);
-
-        service.createCharacter(requestWithSkills(
-                Set.of(Skill.ATHLETICS, Skill.ACROBATICS),
-                Set.of(Skill.STEALTH)));
-
-        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
-        verify(playerCharacterRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getSkillProficiencyGrants())
-                .extracting(SkillProficiencyGrant::getSkill,
-                        SkillProficiencyGrant::getProficiencyLevel,
-                        SkillProficiencyGrant::getSource)
-                .containsExactlyInAnyOrder(
-                        tuple(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT, "BACKGROUND:soldier"),
-                        tuple(Skill.INTIMIDATION, ProficiencyLevel.PROFICIENT, "BACKGROUND:soldier"),
-                        tuple(Skill.ACROBATICS, ProficiencyLevel.PROFICIENT, "CLASS:fighter"),
-                        tuple(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "REPLACEMENT:overlap"));
+                .hasMessageContaining("ATHLETICS");
     }
 
     @Test
@@ -492,7 +382,7 @@ class PlayerCharacterServiceImplTest {
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 null, null,
-                Set.of(Skill.PERCEPTION, Skill.ACROBATICS), null);
+                Set.of(Skill.PERCEPTION, Skill.ACROBATICS));
 
         service.createCharacter(request);
 

@@ -10,7 +10,6 @@ import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
-import com.an.character_app.character.model.SkillProficiencyGrant;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
 import com.an.character_app.exception.InvalidCharacterException;
 import com.an.character_app.character.mapper.AbilityScoresMapper;
@@ -26,9 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 
 @Service
@@ -100,24 +97,15 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         if (request.classSkills().size() != playerClass.getSkillChoiceCount())
             throw new InvalidCharacterException("Number of selected class skills: " + request.classSkills().size() + " does not match the number of skills you can select: " + playerClass.getSkillChoiceCount());
 
-        Set<Skill> classSkills = new HashSet<>(request.classSkills());
-        int overlappingSkills = 0;
         for (Skill skill : request.classSkills()) {
             if (!playerClass.getSkillOptions().contains(skill)) {
                 throw new InvalidCharacterException("The skill: " + skill.name() + " is not available in skill options of: " + playerClass.getName());
             }
             if (playerBackground.getSkills().contains(skill)) {
-                classSkills.remove(skill);
-                overlappingSkills++;
+                throw new InvalidCharacterException("The skill: " + skill.name() + " is already provided by background: " + playerBackground.getName());
             }
         }
-        Set<Skill> freeSkillChoices = request.freeSkillChoices() == null ? Set.of() : request.freeSkillChoices();
-        if (freeSkillChoices.size() != overlappingSkills) {
-            throw new InvalidCharacterException(
-                    "Class and background overlap on " + overlappingSkills
-                            + " skill(s), so exactly " + overlappingSkills
-                            + " replacement skill(s) are required, but " + freeSkillChoices.size() + " were provided.");
-        }
+
 
         createdCharacter.setName(request.name());
         createdCharacter.setLevel(request.level());
@@ -132,23 +120,12 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             createdCharacter.addAbilityScoreModifier(e.getKey(), e.getValue(), "BACKGROUND:" + playerBackground.getId());
         }
 
-        for (Skill skill : playerBackground.getSkills()) {
+        for(Skill skill : playerBackground.getSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "BACKGROUND:" + playerBackground.getId());
         }
 
-        for (Skill skill : classSkills) {
+        for (Skill skill : request.classSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "CLASS:" + playerClass.getId());
-        }
-
-        for (Skill s : freeSkillChoices) {
-            for (SkillProficiencyGrant g : createdCharacter.getSkillProficiencyGrants()) {
-                if (g.getSkill() == s) {
-                    throw new InvalidCharacterException("The skill " + s + " is already granted by " + g.getSource() + " and cannot be a replacement.");
-                }
-            }
-        }
-        for (Skill s : freeSkillChoices) {
-            createdCharacter.addSkillProficiencyGrant(s, ProficiencyLevel.PROFICIENT, "REPLACEMENT:overlap");
         }
 
         Long savedCharacterId = playerCharacterRepository.save(createdCharacter).getId();

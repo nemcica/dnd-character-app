@@ -49,7 +49,7 @@ public class DemoDataLoader implements ApplicationRunner {
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "chain-mail", null,
-                Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING), null);
+                Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING));
     }
 
     private CreateCharacterRequest demoWizard() {
@@ -59,6 +59,6 @@ public class DemoDataLoader implements ApplicationRunner {
                 "wizard", "elf", "acolyte",
                 Map.of(Ability.INT, 2, Ability.WIS, 1),
                 null, null,
-                Set.of(Skill.ARCANA, Skill.INVESTIGATION), null);
+                Set.of(Skill.ARCANA, Skill.INVESTIGATION));
     }
 }
