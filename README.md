@@ -217,27 +217,33 @@ new migration. Every row has a stable slug id (`fighter`, `chain-mail`) and a `s
 
 ## Design decisions
 
-- **Totals are computed, never stored.** The database holds base ability scores and a
-  list of bonus rows (each with a source such as `BACKGROUND:soldier`). Totals,
-  modifiers, skills, HP and AC are calculated on every read, so changing a
-  background or removing a bonus can't leave stale numbers behind.
-- **A pure, unit-tested calculator.** All formulas are static functions in `calc`,
-  tested with edge cases (floor division for negative modifiers, DEX caps by armor
-  type, level thresholds for the proficiency bonus, HP with a negative CON modifier).
-- **Entities and DTOs are separate.** The API shape can change without touching the
-  schema, and lazy relations never leak into JSON.
-- **Rules data lives in the database with stable slug ids** (`fighter`, `soldier`),
-  so adding a book means adding rows, not changing code. Each row has a `source` column.
-- **Sparse proficiency storage.** Only proficiencies a character actually has are stored.
-  Background skills are derived from the background; player-chosen skills are stored
-  as grants. When two sources overlap, the highest level wins.
-- **Schema is versioned with Flyway**, and Hibernate only validates it.
-- **Validation in two layers.** Bean Validation checks request shape (ranges, blanks);
-  the service checks rules that need the database (ids exist, armor and shield are in
-  the right slots, background bonuses are legal).
-- **Tests at every layer.** Unit tests for formulas and mappers, Mockito tests for
-  the service, `MockMvc` tests for the controller, repository tests and an end-to-end
-  test against a real PostgreSQL via Testcontainers.
+**Starting over.** My first plan was a feature hierarchy: a parent `Feature` class with child
+types like "grants a resource" or "grants a spell", for everything a background, feat, species
+or class could give a character. It got tangled before I had a single working endpoint. I threw
+it away and rebuilt the project as a thin skeleton: create a character, get a computed sheet.
+Features, spells and subclasses come back later, one slice at a time.
+
+**Store choices, compute everything else.** The database holds only what the player decided:
+base ability scores, class, background, armor, and the bonus and skill rows that came from
+those choices. Modifiers, skills, etc. are calculated on every read, so a stored
+total can never disagree with its sources. 
+
+**A calculator with no framework in it.** The formulas are static functions in `calc` that
+take a plain `CharacterInput` record and return numbers. The `calculator` package converts a
+`PlayerCharacter` into that record first. This keeps the part with the most rules and most
+possible bugs, testable without Spring or database.
+
+**Rules in the database.** Classes, species, backgrounds and armor
+are rows with stable slug ids.
+
+**Separate grants.** Ability bonuses and skill proficiencies are stored in separate tables. 
+A single "grant" table would look neater, but the two behave differently: bonuses add up and 
+are capped at 20, while proficiencies take the highest level and never stack.
+
+**Validation in two places.** Bean Validation checks the shape of a request (ranges, blanks,
+required fields). Anything that needs the database, such as whether the ids exist, whether the
+background offers those abilities, or whether the chosen skills are on the class list, is
+checked in the service.
 
 ## Roadmap
 
