@@ -3,9 +3,11 @@ package com.an.character_app.character.repository;
 import com.an.character_app.character.model.AbilityScores;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.character.model.SkillProficiencyGrant;
+import com.an.character_app.character.model.ToolProficiencyGrant;
 import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.ProficiencyLevel;
 import com.an.character_app.rules.model.Skill;
+import com.an.character_app.rules.model.Tool;
 import com.an.character_app.rules.repository.ArmorDefRepository;
 import com.an.character_app.rules.repository.BackgroundDefRepository;
 import com.an.character_app.rules.repository.ClassDefRepository;
@@ -94,5 +96,55 @@ class PlayerCharacterRepositoryTest {
                 );
 
 
+    }
+
+    @Test
+    void savesAndLoadsToolProficiencyGrants() {
+        PlayerCharacter c = newTestCharacter();
+        c.addToolProficiencyGrant(Tool.CALLIGRAPHERS_SUPPLIES, "BACKGROUND:acolyte");
+        c.addToolProficiencyGrant(Tool.THIEVES_TOOLS, "CLASS:rogue");
+
+        Long id = playerCharacterRepository.saveAndFlush(c).getId();
+        entityManager.clear();
+
+        PlayerCharacter loaded = playerCharacterRepository.findById(id).orElseThrow();
+
+        assertThat(loaded.getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getTool, ToolProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(Tool.CALLIGRAPHERS_SUPPLIES, "BACKGROUND:acolyte"),
+                        tuple(Tool.THIEVES_TOOLS, "CLASS:rogue"));
+    }
+
+    @Test
+    void sameToolFromTwoSourcesIsStoredTwice() {
+        PlayerCharacter c = newTestCharacter();
+        c.addToolProficiencyGrant(Tool.THIEVES_TOOLS, "CLASS:rogue");
+        c.addToolProficiencyGrant(Tool.THIEVES_TOOLS, "BACKGROUND:criminal");
+
+        Long id = playerCharacterRepository.saveAndFlush(c).getId();
+        entityManager.clear();
+
+        assertThat(playerCharacterRepository.findById(id).orElseThrow().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder("CLASS:rogue", "BACKGROUND:criminal");
+    }
+
+    @Test
+    void deletingCharacterDeletesItsToolGrants() {
+        PlayerCharacter c = newTestCharacter();
+        c.addToolProficiencyGrant(Tool.THIEVES_TOOLS, "CLASS:rogue");
+        Long id = playerCharacterRepository.saveAndFlush(c).getId();
+        entityManager.clear();
+
+        playerCharacterRepository.deleteById(id);
+        playerCharacterRepository.flush();
+        entityManager.clear();
+
+        Number remaining = (Number) entityManager
+                .createNativeQuery("select count(*) from tool_proficiency_grant where player_character_id = :id")
+                .setParameter("id", id)
+                .getSingleResult();
+        assertThat(remaining.longValue()).isZero();
     }
 }

@@ -31,5 +31,11 @@ public class BackgroundDef {
     @Column(name = "skill")
     @Enumerated(EnumType.STRING)
     private Set<Skill> skills;
+
+    @Enumerated(EnumType.STRING)
+    private Tool tool;
+
+    @Enumerated(EnumType.STRING)
+    private ToolCategory toolCategory;
 }
 
