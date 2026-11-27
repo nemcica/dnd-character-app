@@ -40,11 +40,32 @@ public class CharacterApiIntegrationTest {
               "classSkills": ["ANIMAL_HANDLING", "PERCEPTION"]
             }
             """;
+
+    private static final String OVERLAP_BODY = """
+            {
+              "name": "Tom",
+              "level": 5,
+              "baseAbilityScores": {
+                "strength": 15, "dexterity": 14, "constitution": 13,
+                "intelligence": 12, "wisdom": 10, "charisma": 8
+              },
+              "classId": "fighter",
+              "speciesId": "human",
+              "backgroundId": "soldier",
+              "backgroundAbilityBonuses": { "STR": 2, "CON": 1 },
+              "armorId": "chain-mail",
+              "classSkills": ["ATHLETICS", "ACROBATICS"],
+              "freeSkillChoices": ["STEALTH"]
+            }
+            """;
+
     @Container
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
+
     @Autowired
     MockMvc mockMvc;
+
     @Autowired
     PlayerCharacterRepository playerCharacterRepository;
 
@@ -133,5 +154,39 @@ public class CharacterApiIntegrationTest {
         mockMvc.perform(delete("/characters/" + id)).andExpect(status().isNoContent());
         mockMvc.perform(get("/characters/" + id)).andExpect(status().isNotFound());
         assertThat(playerCharacterRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void overlappingClassSkillIsReplacedByFreeChoice() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(OVERLAP_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String location = created.getResponse().getHeader("Location");
+
+        mockMvc.perform(get(location))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.calculatedStats.skills.ATHLETICS").value(6))      // background, 3 + 3
+                .andExpect(jsonPath("$.calculatedStats.skills.INTIMIDATION").value(2))   // background, -1 + 3
+                .andExpect(jsonPath("$.calculatedStats.skills.ACROBATICS").value(5))     // class pick, 2 + 3
+                .andExpect(jsonPath("$.calculatedStats.skills.STEALTH").value(5))        // replacement, 2 + 3
+                .andExpect(jsonPath("$.calculatedStats.skills.SLEIGHT_OF_HAND").value(2)); // not proficient, DEX only
+    }
+
+    @Test
+    void overlapWithoutReplacementIsRejectedAndSavesNothing() throws Exception {
+        String body = OVERLAP_BODY.replace(
+                "\"freeSkillChoices\": [\"STEALTH\"]",
+                "\"freeSkillChoices\": []");
+
+        mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(containsString("exactly 1")));
+
+        assertThat(playerCharacterRepository.count()).isZero();
     }
 }

@@ -57,7 +57,7 @@ class PlayerCharacterControllerTest {
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "plate",
                 "shield",
-                Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
+                Set.of(Skill.ATHLETICS, Skill.INTIMIDATION), null);
     }
 
     private CharacterSheetResponse validResponse() {
@@ -192,6 +192,7 @@ class PlayerCharacterControllerTest {
                 validRequest().backgroundAbilityBonuses(),
                 null,
                 null,
+                null,
                 null);
 
         mockMvc.perform(post("/characters")
@@ -208,7 +209,7 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 21, validRequest().baseAbilityScores(),
                 "fighter", "human", "soldier",
-                validRequest().backgroundAbilityBonuses(), null, null, null);
+                validRequest().backgroundAbilityBonuses(), null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -222,7 +223,7 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 1, new AbilityScoresRequest(19, 12, 14, 8, 10, 10),
                 "fighter", "human", "soldier",
-                validRequest().backgroundAbilityBonuses(), null, null, null);
+                validRequest().backgroundAbilityBonuses(), null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -236,7 +237,7 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 1, validRequest().baseAbilityScores(),
                 "fighter", "human", "soldier",
-                Map.of(Ability.STR, 3), null, null, null);
+                Map.of(Ability.STR, 3), null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)
