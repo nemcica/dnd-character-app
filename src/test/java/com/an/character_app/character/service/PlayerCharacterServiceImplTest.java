@@ -291,7 +291,7 @@ class PlayerCharacterServiceImplTest {
                         tuple(Ability.CON, 1, "BACKGROUND:soldier"));
         assertThat(saved.getSkillProficiencyGrants())
                 .extracting(SkillProficiencyGrant::getSkill, SkillProficiencyGrant::getSource)
-                .containsExactlyInAnyOrder(tuple(Skill.ANIMAL_HANDLING, "CLASS:fighter"), tuple(Skill.ACROBATICS, "CLASS:fighter"));
+                .containsExactlyInAnyOrder(tuple(Skill.ANIMAL_HANDLING, "CLASS:fighter"), tuple(Skill.ACROBATICS, "CLASS:fighter"), tuple(Skill.ATHLETICS, "BACKGROUND:soldier"));
 
         assertThat(sheet.name()).isEqualTo("Test");
         assertThat(sheet.className()).isEqualTo("Fighter");
@@ -349,6 +349,55 @@ class PlayerCharacterServiceImplTest {
         service.deleteCharacter(1L);
 
         verify(playerCharacterRepository).deleteById(1L);
+    }
+
+    @Test
+    void createsGrantsForBackgroundSkillsAndClassSkills() {
+        ClassDef fighter = mock(ClassDef.class);
+        when(fighter.getId()).thenReturn("fighter");
+        when(fighter.getName()).thenReturn("Fighter");
+        when(fighter.getHitDie()).thenReturn(10);
+        when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        when(fighter.getSkillChoiceCount()).thenReturn(2);
+        when(fighter.getSkillOptions()).thenReturn(
+                Set.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.PERCEPTION));
+
+        SpeciesDef human = mock(SpeciesDef.class);
+        when(human.getName()).thenReturn("Human");
+
+        BackgroundDef soldier = mock(BackgroundDef.class);
+        when(soldier.getId()).thenReturn("soldier");
+        when(soldier.getName()).thenReturn("Soldier");
+        when(soldier.getSkills()).thenReturn(Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
+        when(soldier.getAbilityOptions()).thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+
+        when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
+        when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(soldier));
+        stubSavePersistsWithId(1L);
+
+        CreateCharacterRequest request = new CreateCharacterRequest(
+                "Test", 5,
+                new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
+                "fighter", "human", "soldier",
+                Map.of(Ability.STR, 2, Ability.CON, 1),
+                null, null,
+                Set.of(Skill.PERCEPTION, Skill.ACROBATICS));
+
+        service.createCharacter(request);
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getSkillProficiencyGrants())
+                .extracting(SkillProficiencyGrant::getSkill,
+                        SkillProficiencyGrant::getProficiencyLevel,
+                        SkillProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT, "BACKGROUND:soldier"),
+                        tuple(Skill.INTIMIDATION, ProficiencyLevel.PROFICIENT, "BACKGROUND:soldier"),
+                        tuple(Skill.PERCEPTION, ProficiencyLevel.PROFICIENT, "CLASS:fighter"),
+                        tuple(Skill.ACROBATICS, ProficiencyLevel.PROFICIENT, "CLASS:fighter"));
     }
 
 }

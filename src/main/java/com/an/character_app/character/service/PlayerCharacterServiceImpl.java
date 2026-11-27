@@ -120,6 +120,10 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             createdCharacter.addAbilityScoreModifier(e.getKey(), e.getValue(), "BACKGROUND:" + playerBackground.getId());
         }
 
+        for(Skill skill : playerBackground.getSkills()) {
+            createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "BACKGROUND:" + playerBackground.getId());
+        }
+
         for (Skill skill : request.classSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "CLASS:" + playerClass.getId());
         }

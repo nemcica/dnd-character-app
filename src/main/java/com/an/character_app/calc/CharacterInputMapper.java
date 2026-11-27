@@ -30,11 +30,8 @@ public class CharacterInputMapper {
         }
 
         Map<Skill, ProficiencyLevel> skillProficiencies = new EnumMap<>(Skill.class);
-        for (Skill s : playerCharacter.getBackground().getSkills()) {
-            skillProficiencies.put(s, ProficiencyLevel.PROFICIENT);
-        }
-        for (SkillProficiencyGrant g : playerCharacter.getSkillProficiencyGrants()) {
-            skillProficiencies.merge(g.getSkill(), g.getProficiencyLevel(), (a, b) -> a.compareTo(b) >= 0 ? a : b);
+        for (SkillProficiencyGrant sp : playerCharacter.getSkillProficiencyGrants()) {
+            skillProficiencies.merge(sp.getSkill(), sp.getProficiencyLevel(), (a, b) -> a.compareTo(b) >= 0 ? a : b);
         }
 
         Set<Ability> savingThrowProficiencies = EnumSet.noneOf(Ability.class);

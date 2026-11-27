@@ -6,8 +6,7 @@ import com.an.character_app.rules.model.*;
 
 import java.util.Set;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TestCharacters {
 
@@ -27,7 +26,7 @@ public class TestCharacters {
 
     public BackgroundDef background(Skill... skills) {
         BackgroundDef b = mock(BackgroundDef.class);
-        when(b.getSkills()).thenReturn(Set.of(skills));
+        lenient().when(b.getSkills()).thenReturn(Set.of(skills));
         return b;
     }
 

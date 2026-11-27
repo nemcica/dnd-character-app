@@ -91,15 +91,6 @@ class CharacterInputMapperTest {
         assertThat(bonus.values()).allMatch(v -> v == 0);
     }
 
-    @Test
-    void backgroundSkillsAreProficient() {
-        PlayerCharacter pc = testCharacters.baseCharacter();
-        pc.setBackground(testCharacters.background(Skill.ATHLETICS, Skill.INTIMIDATION));
-
-        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
-                .containsOnly(entry(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT),
-                        entry(Skill.INTIMIDATION, ProficiencyLevel.PROFICIENT));
-    }
 
     @Test
     void grantsAreMapped() {
@@ -111,10 +102,10 @@ class CharacterInputMapperTest {
     }
 
     @Test
-    void sameSkillFromTwoSourcesStaysSingleProficiency() {
+    void sameSkillFromTwoGrantsStaysSingleProficiency() {
         PlayerCharacter pc = testCharacters.baseCharacter();
-        pc.setBackground(testCharacters.background(Skill.STEALTH));
-        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "CLASS:rogue");
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "BACKGROUND:criminal");
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "FEAT:skilled");
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
                 .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.PROFICIENT));
@@ -123,7 +114,7 @@ class CharacterInputMapperTest {
     @Test
     void expertiseUpgradesProficiency() {
         PlayerCharacter pc = testCharacters.baseCharacter();
-        pc.setBackground(testCharacters.background(Skill.STEALTH));
+        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "BACKGROUND:criminal");
         pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
 
         assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
@@ -131,12 +122,18 @@ class CharacterInputMapperTest {
     }
 
     @Test
-    void proficiencyGrantNeverDowngradesExpertise() {
-        PlayerCharacter pc = testCharacters.baseCharacter();
-        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
-        pc.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "FEAT:skilled");
+    void proficiencyNeverDowngradesExpertiseWhateverTheOrder() {
+        PlayerCharacter expertiseFirst = testCharacters.baseCharacter();
+        expertiseFirst.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
+        expertiseFirst.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "BACKGROUND:criminal");
 
-        assertThat(CharacterInputMapper.toInput(pc).skillProficiencies())
+        PlayerCharacter proficiencyFirst = testCharacters.baseCharacter();
+        proficiencyFirst.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.PROFICIENT, "BACKGROUND:criminal");
+        proficiencyFirst.addSkillProficiencyGrant(Skill.STEALTH, ProficiencyLevel.EXPERTISE, "CLASS:rogue");
+
+        assertThat(CharacterInputMapper.toInput(expertiseFirst).skillProficiencies())
+                .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.EXPERTISE));
+        assertThat(CharacterInputMapper.toInput(proficiencyFirst).skillProficiencies())
                 .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.EXPERTISE));
     }
 
