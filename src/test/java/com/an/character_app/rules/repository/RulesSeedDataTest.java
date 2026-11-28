@@ -1,6 +1,8 @@
 package com.an.character_app.rules.repository;
 
 import com.an.character_app.rules.model.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceUnitUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -32,6 +34,8 @@ class RulesSeedDataTest {
     @Autowired ArmorDefRepository armorRepo;
     @Autowired
     JdbcTemplate jdbc;
+    @Autowired
+    EntityManager entityManager;
 
     // --- backgrounds ---------------------------------------------------
 
@@ -138,5 +142,129 @@ class RulesSeedDataTest {
         assertThat(classRepo.findById("wizard").orElseThrow().getArmorTraining()).isEmpty();
         assertThat(classRepo.findById("rogue").orElseThrow().getArmorTraining())
                 .containsExactly(ArmorCategory.LIGHT);
+    }
+
+    // --- weapons ---------------------------------------------------------
+    @Autowired
+    WeaponDefRepository weaponDefRepository;
+
+    @Test
+    void everyWeaponLoadsWithRequiredFields() {
+        List<WeaponDef> weapons = weaponDefRepository.findAll();
+
+        assertThat(weapons).isNotEmpty();
+        for (WeaponDef w : weapons) {
+            assertThat(w.getId()).matches("[a-z]+(-[a-z]+)*");
+            assertThat(w.getName()).as(w.getId() + " name").isNotBlank();
+            assertThat(w.getWeaponCategory()).as(w.getId() + " category").isNotNull();
+            assertThat(w.getMeleeOrRanged()).as(w.getId() + " melee/ranged").isNotNull();
+            assertThat(w.getDamageType()).as(w.getId() + " damage type").isNotNull();
+            assertThat(w.getWeaponMastery()).as(w.getId() + " mastery").isNotNull();
+            assertThat(w.getSource()).as(w.getId() + " source").isNotBlank();
+        }
+    }
+
+    @Test
+    void weaponDiceAndRangeStringsFollowTheExpectedPatterns() {
+        for (WeaponDef w : weaponDefRepository.findAll()) {
+            assertThat(w.getDamageDice()).as(w.getId() + " damage dice").matches("\\d+d\\d+|\\d+");
+            if (w.getVersatileDamageDice() != null) {
+                assertThat(w.getVersatileDamageDice()).as(w.getId() + " versatile dice").matches("\\d+d\\d+");
+            }
+            if (w.getWeaponRange() != null) {
+                assertThat(w.getWeaponRange()).as(w.getId() + " range").matches("\\d+/\\d+");
+            }
+        }
+    }
+
+    @Test
+    void versatileDiceArePresentExactlyWhenTheVersatilePropertyIs() {
+        for (WeaponDef w : weaponDefRepository.findAll()) {
+            boolean hasProperty = w.getWeaponProperties().contains(WeaponProperty.VERSATILE);
+            boolean hasDice = w.getVersatileDamageDice() != null;
+            assertThat(hasDice).as("%s: versatile property and versatile dice must agree", w.getId())
+                    .isEqualTo(hasProperty);
+        }
+    }
+
+    @Test
+    void rangeIsPresentExactlyWhenTheWeaponIsThrownOrUsesAmmunition() {
+        for (WeaponDef w : weaponDefRepository.findAll()) {
+            boolean needsRange = w.getWeaponProperties().contains(WeaponProperty.THROWN)
+                    || w.getWeaponProperties().contains(WeaponProperty.AMMUNITION);
+            assertThat(w.getWeaponRange() != null).as("%s: range and thrown/ammunition must agree", w.getId())
+                    .isEqualTo(needsRange);
+        }
+    }
+
+    @Test
+    void everyRangedWeaponIsThrownOrUsesAmmunition() {
+        for (WeaponDef w : weaponDefRepository.findAll()) {
+            if (w.getMeleeOrRanged() == MeleeOrRanged.RANGED) {
+                assertThat(w.getWeaponProperties())
+                        .as(w.getId() + " is ranged, so it should be thrown or use ammunition")
+                        .containsAnyOf(WeaponProperty.THROWN, WeaponProperty.AMMUNITION);
+            }
+        }
+    }
+
+    @Test
+    void catalogCoversBothCategoriesAndBothKindsOfWeapon() {
+        List<WeaponDef> weapons = weaponDefRepository.findAll();
+
+        assertThat(weapons).anyMatch(w -> w.getWeaponCategory() == WeaponCategory.SIMPLE);
+        assertThat(weapons).anyMatch(w -> w.getWeaponCategory() == WeaponCategory.MARTIAL);
+        assertThat(weapons).anyMatch(w -> w.getMeleeOrRanged() == MeleeOrRanged.MELEE);
+        assertThat(weapons).anyMatch(w -> w.getMeleeOrRanged() == MeleeOrRanged.RANGED);
+    }
+
+    @Test
+    void catalogSupportsTheRogueStyleProficiencyRule() {
+        List<WeaponDef> martial = weaponDefRepository.findAll().stream()
+                .filter(w -> w.getWeaponCategory() == WeaponCategory.MARTIAL)
+                .toList();
+
+        assertThat(martial).anyMatch(w -> w.getWeaponProperties().contains(WeaponProperty.FINESSE)
+                || w.getWeaponProperties().contains(WeaponProperty.LIGHT));
+        assertThat(martial).anyMatch(w -> !w.getWeaponProperties().contains(WeaponProperty.FINESSE)
+                && !w.getWeaponProperties().contains(WeaponProperty.LIGHT));
+    }
+
+    @Test
+    void weaponPropertiesAreLoadedEagerly() {
+        entityManager.clear();
+
+        List<WeaponDef> weapons = weaponDefRepository.findAll();
+
+        PersistenceUnitUtil util = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+        for (WeaponDef w : weapons) {
+            assertThat(util.isLoaded(w, "weaponProperties")).as(w.getId()).isTrue();
+        }
+    }
+
+    @Test
+    void spotCheckedWeaponsMatchTheBook() {
+        WeaponDef dagger = weaponDefRepository.findById("dagger").orElseThrow();
+        assertThat(dagger.getDamageDice()).isEqualTo("1d4");
+        assertThat(dagger.getDamageType()).isEqualTo(DamageType.PIERCING);
+        assertThat(dagger.getWeaponProperties())
+                .contains(WeaponProperty.FINESSE, WeaponProperty.LIGHT, WeaponProperty.THROWN);
+
+        WeaponDef longsword = weaponDefRepository.findById("longsword").orElseThrow();
+        assertThat(longsword.getDamageDice()).isEqualTo("1d8");
+        assertThat(longsword.getVersatileDamageDice()).isEqualTo("1d10");
+        assertThat(longsword.getWeaponCategory()).isEqualTo(WeaponCategory.MARTIAL);
+
+        WeaponDef shortbow = weaponDefRepository.findById("shortbow").orElseThrow();
+        assertThat(shortbow.getMeleeOrRanged()).isEqualTo(MeleeOrRanged.RANGED);
+        assertThat(shortbow.getWeaponProperties()).contains(WeaponProperty.AMMUNITION);
+        assertThat(shortbow.getWeaponRange()).isNotNull();
+    }
+
+    @Test
+    void everyWeaponMasteryHasADescription() {
+        for (WeaponMastery m : WeaponMastery.values()) {
+            assertThat(m.getDescription()).as(m.name() + " description").isNotBlank();
+        }
     }
 }

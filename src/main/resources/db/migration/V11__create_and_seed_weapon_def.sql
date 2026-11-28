@@ -35,7 +35,7 @@ insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage
 ('greatclub', 'Greatclub', 'SIMPLE', 'MELEE', '1d8', 'BLUDGEONING', null, null, 'PUSH', 'PHB2024'),
 ('handaxe', 'Handaxe', 'SIMPLE', 'MELEE', '1d6', 'SLASHING', null, '20/60', 'VEX', 'PHB2024'),
 ('javelin', 'Javelin', 'SIMPLE', 'MELEE', '1d6', 'PIERCING', null, '30/120', 'SLOW', 'PHB2024'),
-('light_hammer', 'Light Hammer', 'SIMPLE', 'MELEE', '1d4', 'BLUDGEONING', null, '20/60', 'NICK', 'PHB2024'),
+('light-hammer', 'Light Hammer', 'SIMPLE', 'MELEE', '1d4', 'BLUDGEONING', null, '20/60', 'NICK', 'PHB2024'),
 ('mace', 'Mace', 'SIMPLE', 'MELEE', '1d6', 'BLUDGEONING', null, null, 'SAP', 'PHB2024'),
 ('pitchfork', 'Pitchfork', 'SIMPLE', 'MELEE', '1d6', 'PIERCING', null, null, 'PUSH', 'PHB2024'),
 ('quarterstaff', 'Quarterstaff', 'SIMPLE', 'MELEE', '1d6', 'BLUDGEONING', '1d8', null, 'TOPPLE', 'PHB2024'),
@@ -51,8 +51,8 @@ insert into weapon_property (weapon_id, property) values
 ('handaxe', 'LIGHT'),
 ('handaxe', 'THROWN'),
 ('javelin', 'THROWN'),
-('light_hammer', 'LIGHT'),
-('light_hammer', 'THROWN'),
+('light-hammer', 'LIGHT'),
+('light-hammer', 'THROWN'),
 ('pitchfork', 'REACH'),
 ('pitchfork', 'TWO_HANDED'),
 ('quarterstaff', 'VERSATILE'),
@@ -67,16 +67,16 @@ insert into weapon_property (weapon_id, property) values
 
 insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('dart', 'Dart', 'SIMPLE', 'RANGED', '1d4', 'PIERCING', null, '20/60', 'VEX', 'PHB2024'),
-('light_crossbow', 'Light Crossbow', 'SIMPLE', 'RANGED', '1d8', 'PIERCING', null, '80/320', 'SLOW', 'PHB2024'),
+('light-crossbow', 'Light Crossbow', 'SIMPLE', 'RANGED', '1d8', 'PIERCING', null, '80/320', 'SLOW', 'PHB2024'),
 ('shortbow', 'Shortbow', 'SIMPLE', 'RANGED', '1d6', 'PIERCING', null, '80/320', 'VEX', 'PHB2024'),
 ('sling', 'Sling', 'SIMPLE', 'RANGED', '1d4', 'BLUDGEONING', null, '30/120', 'SLOW', 'PHB2024');
 
 insert into weapon_property (weapon_id, property) values
 ('dart', 'FINESSE'),
 ('dart', 'THROWN'),
-('light_crossbow', 'AMMUNITION'),
-('light_crossbow', 'LOADING'),
-('light_crossbow', 'TWO_HANDED'),
+('light-crossbow', 'AMMUNITION'),
+('light-crossbow', 'LOADING'),
+('light-crossbow', 'TWO_HANDED'),
 ('shortbow', 'AMMUNITION'),
 ('shortbow', 'TWO_HANDED'),
 ('sling', 'AMMUNITION');
@@ -103,8 +103,8 @@ insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage
 ('shortsword', 'Shortsword', 'MARTIAL', 'MELEE', '1d6', 'PIERCING', null, null, 'VEX', 'PHB2024'),
 ('trident', 'Trident', 'MARTIAL', 'MELEE', '1d8', 'PIERCING', '1d10', '20/60', 'TOPPLE', 'PHB2024'),
 ('warhammer', 'Warhammer', 'MARTIAL', 'MELEE', '1d8', 'BLUDGEONING', '1d10', null, 'PUSH', 'PHB2024'),
-('war_pick', 'War Pick', 'MARTIAL', 'MELEE', '1d8', 'PIERCING', '1d10', null, 'SAP', 'PHB2024'),
-('weighted_chain', 'Weighted Chain', 'MARTIAL', 'MELEE', '1d8', 'BLUDGEONING', null, null, 'GRAZE', 'PHB2024'),
+('war-pick', 'War Pick', 'MARTIAL', 'MELEE', '1d8', 'PIERCING', '1d10', null, 'SAP', 'PHB2024'),
+('weighted-chain', 'Weighted Chain', 'MARTIAL', 'MELEE', '1d8', 'BLUDGEONING', null, null, 'GRAZE', 'PHB2024'),
 ('whip', 'Whip', 'MARTIAL', 'MELEE', '1d4', 'SLASHING', null, null, 'SLOW', 'PHB2024');
 
 insert into weapon_property (weapon_id, property) values
@@ -136,11 +136,11 @@ insert into weapon_property (weapon_id, property) values
 ('trident', 'THROWN'),
 ('trident', 'VERSATILE'),
 ('warhammer', 'VERSATILE'),
-('war_pick', 'VERSATILE'),
-('weighted_chain', 'FINESSE'),
-('weighted_chain', 'HEAVY'),
-('weighted_chain', 'REACH'),
-('weighted_chain', 'TWO_HANDED'),
+('war-pick', 'VERSATILE'),
+('weighted-chain', 'FINESSE'),
+('weighted-chain', 'HEAVY'),
+('weighted-chain', 'REACH'),
+('weighted-chain', 'TWO_HANDED'),
 ('whip', 'FINESSE'),
 ('whip', 'REACH');
 
@@ -152,8 +152,8 @@ insert into weapon_property (weapon_id, property) values
 insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('blowgun', 'Blowgun', 'MARTIAL', 'RANGED', '1', 'PIERCING', null, '25/100', 'VEX', 'PHB2024'),
 ('bola', 'Bola', 'MARTIAL', 'RANGED', '1', 'BLUDGEONING', null, '20/40', 'TOPPLE', 'PHB2024'),
-('hand_crossbow', 'Hand Crossbow', 'MARTIAL', 'RANGED', '1d6', 'PIERCING', null, '30/120', 'VEX', 'PHB2024'),
-('heavy_crossbow', 'Heavy Crossbow', 'MARTIAL', 'RANGED', '1d10', 'PIERCING', null, '100/400', 'PUSH', 'PHB2024'),
+('hand-crossbow', 'Hand Crossbow', 'MARTIAL', 'RANGED', '1d6', 'PIERCING', null, '30/120', 'VEX', 'PHB2024'),
+('heavy-crossbow', 'Heavy Crossbow', 'MARTIAL', 'RANGED', '1d10', 'PIERCING', null, '100/400', 'PUSH', 'PHB2024'),
 ('longbow', 'Longbow', 'MARTIAL', 'RANGED', '1d8', 'PIERCING', null, '150/600', 'SLOW', 'PHB2024'),
 ('musket', 'Musket', 'MARTIAL', 'RANGED', '1d12', 'PIERCING', null, '40/120', 'SLOW', 'PHB2024'),
 ('pistol', 'Pistol', 'MARTIAL', 'RANGED', '1d10', 'PIERCING', null, '30/90', 'VEX', 'PHB2024');
@@ -163,13 +163,13 @@ insert into weapon_property (weapon_id, property) values
 ('blowgun', 'LOADING'),
 ('bola', 'FINESSE'),
 ('bola', 'THROWN'),
-('hand_crossbow', 'AMMUNITION'),
-('hand_crossbow', 'LIGHT'),
-('hand_crossbow', 'LOADING'),
-('heavy_crossbow', 'AMMUNITION'),
-('heavy_crossbow', 'HEAVY'),
-('heavy_crossbow', 'LOADING'),
-('heavy_crossbow', 'TWO_HANDED'),
+('hand-crossbow', 'AMMUNITION'),
+('hand-crossbow', 'LIGHT'),
+('hand-crossbow', 'LOADING'),
+('heavy-crossbow', 'AMMUNITION'),
+('heavy-crossbow', 'HEAVY'),
+('heavy-crossbow', 'LOADING'),
+('heavy-crossbow', 'TWO_HANDED'),
 ('longbow', 'AMMUNITION'),
 ('longbow', 'HEAVY'),
 ('longbow', 'TWO_HANDED'),
