@@ -11,7 +11,7 @@ where id = 'plate';
 
 insert into armor_def(id, name, category, base_ac, dex_cap, min_str_required, stealth_disadvantage, source)
 values
--- Light Armor
+    -- Light Armor
     ('padded', 'Padded Armor', 'LIGHT', 11, null, null, true, 'PHB2024'),
     ('studded-leather', 'Studded Leather Armor', 'LIGHT', 12, null, null, false, 'PHB2024'),
 

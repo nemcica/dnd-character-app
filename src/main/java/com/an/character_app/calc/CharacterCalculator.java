@@ -5,10 +5,7 @@ import com.an.character_app.rules.model.ArmorCategory;
 import com.an.character_app.rules.model.ProficiencyLevel;
 import com.an.character_app.rules.model.Skill;
 
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class CharacterCalculator {
 
@@ -45,6 +42,30 @@ public final class CharacterCalculator {
             hp += Math.max(1, die / 2 + 1 + conModifier);
         }
         return hp;
+    }
+
+    public static Set<ArmorWarning> armorWarnings(ArmorFacts armor, Set<ArmorCategory> training, int totalStrength) {
+        Set<ArmorWarning> warnings = EnumSet.noneOf(ArmorWarning.class);
+
+        if (armor.category() != null) {
+            if (!training.contains(armor.category())) {
+                warnings.add(ArmorWarning.UNTRAINED_ARMOR);
+            }
+            if (armor.minStrRequired() != null && totalStrength < armor.minStrRequired()) {
+                warnings.add(ArmorWarning.STR_REQUIREMENT);
+            }
+            if (armor.stealthDisadvantage()) {
+                warnings.add(ArmorWarning.STEALTH_DISADVANTAGE);
+            }
+        }
+        if (armor.shieldEquipped() && !training.contains(ArmorCategory.SHIELD)) {
+            warnings.add(ArmorWarning.UNTRAINED_SHIELD);
+        }
+        return warnings;
+    }
+
+    public static int effectiveShieldBonus(Set<ArmorCategory> training, int bonus) {
+        return training.contains(ArmorCategory.SHIELD) ? bonus : 0;
     }
 
     public static int armorClass(int dexModifier, ArmorCategory category, Integer baseAc, Integer dexCap, int shieldBonus) {
@@ -96,13 +117,15 @@ public final class CharacterCalculator {
 
         int maxHp = maxHp(characterInput.hitDie(), Collections.nCopies(characterInput.level() - 1, characterInput.hitDie()), abilities.get(Ability.CON).modifier());
 
-        int armorClass = armorClass(abilities.get(Ability.DEX).modifier(), characterInput.armorCategory(), characterInput.baseAc(), characterInput.dexCap(), characterInput.shieldBonus());
+        int armorClass = armorClass(abilities.get(Ability.DEX).modifier(), characterInput.armor().category(), characterInput.armor().baseAc(), characterInput.armor().dexCap(), effectiveShieldBonus(characterInput.armorTraining(), characterInput.armor().shieldBonus()));
 
         int initiative = initiative(abilities.get(Ability.DEX).modifier(), 0); //TO-DO: add initiative bonuses to char input
 
         int passivePerception = passiveScore(skills.get(Skill.PERCEPTION));
         int passiveInsight = passiveScore(skills.get(Skill.INSIGHT));
         int passiveInvestigation = passiveScore(skills.get(Skill.INVESTIGATION));
+
+        Set<ArmorWarning> armorWarnings = armorWarnings(characterInput.armor(), characterInput.armorTraining(), abilities.get(Ability.STR).total());
 
         return new CalculatedStats(
                 proficiencyBonus,
@@ -114,7 +137,8 @@ public final class CharacterCalculator {
                 initiative,
                 passivePerception,
                 passiveInsight,
-                passiveInvestigation
+                passiveInvestigation,
+                armorWarnings
         );
     }
 }

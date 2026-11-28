@@ -9,7 +9,9 @@ import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
 import com.an.character_app.character.model.AbilityScores;
+import com.an.character_app.character.model.ArmorTrainingGrant;
 import com.an.character_app.character.model.PlayerCharacter;
+import com.an.character_app.character.model.ToolProficiencyGrant;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
 import com.an.character_app.exception.InvalidCharacterException;
 import com.an.character_app.character.mapper.AbilityScoresMapper;
@@ -25,7 +27,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -45,6 +50,12 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         PlayerCharacter foundCharacter = playerCharacterRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Character with id: " + id + " does not exist."));
         CharacterInput input = CharacterInputMapper.toInput(foundCharacter);
         CalculatedStats stats = CharacterCalculator.calculate(input);
+        Set<Tool> toolProficiencies = foundCharacter.getToolProficiencyGrants().stream()
+                .map(ToolProficiencyGrant::getTool)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(Tool.class)));
+        Set<ArmorCategory> armorTraining = foundCharacter.getArmorTrainingGrants().stream()
+                .map(ArmorTrainingGrant::getArmorCategory)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(ArmorCategory.class)));
 
         return new CharacterSheetResponse(
                 foundCharacter.getId(),
@@ -53,8 +64,10 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
                 foundCharacter.getSpecies().getName(),
                 foundCharacter.getCharacterClass().getName(),
                 foundCharacter.getBackground().getName(),
-                stats
-        );
+                stats,
+                toolProficiencies,
+                armorTraining
+                );
     }
 
     @Override
@@ -106,6 +119,32 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             }
         }
 
+        if (playerBackground.getTool() != null && request.backgroundTool() != null) {
+            throw new InvalidCharacterException("Background " + playerBackground.getName() + " has a fixed tool proficiency and you cannot provide one.");
+        }
+        if (playerBackground.getToolCategory() != null && request.backgroundTool() == null) {
+            throw new InvalidCharacterException("Background " + playerBackground.getName() + " requires you to select an appropriate tool proficiency.");
+        }
+        if (playerBackground.getToolCategory() != null && request.backgroundTool().getToolCategory() != playerBackground.getToolCategory()) {
+            throw new InvalidCharacterException("You have to select a tool from: " + playerBackground.getToolCategory() + ", but you selected one from: " + request.backgroundTool().getToolCategory());
+        }
+
+        Set<Tool> classTools = request.classTools() == null ? Set.of() : request.classTools();
+        Set<ToolCategory> allowedCategories = playerClass.getToolChoiceCategories();
+        int requiredClassTools = allowedCategories.isEmpty() ? 0 : playerClass.getToolChoiceCount();
+
+        if (classTools.size() != requiredClassTools) {
+            throw new InvalidCharacterException(
+                    "Class " + playerClass.getName() + " requires " + requiredClassTools
+                            + " tool proficiency choice(s), but " + classTools.size() + " were provided.");
+        }
+        for (Tool tool : classTools) {
+            if (!allowedCategories.contains(tool.getToolCategory())) {
+                throw new InvalidCharacterException(
+                        "Tool " + tool + " is not in an allowed category for class " + playerClass.getName()
+                                + ". Allowed: " + allowedCategories);
+            }
+        }
 
         createdCharacter.setName(request.name());
         createdCharacter.setLevel(request.level());
@@ -120,12 +159,28 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             createdCharacter.addAbilityScoreModifier(e.getKey(), e.getValue(), "BACKGROUND:" + playerBackground.getId());
         }
 
-        for(Skill skill : playerBackground.getSkills()) {
+        for (Skill skill : playerBackground.getSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "BACKGROUND:" + playerBackground.getId());
         }
 
         for (Skill skill : request.classSkills()) {
             createdCharacter.addSkillProficiencyGrant(skill, ProficiencyLevel.PROFICIENT, "CLASS:" + playerClass.getId());
+        }
+
+        createdCharacter.addToolProficiencyGrant(request.backgroundTool() == null ? playerBackground.getTool() : request.backgroundTool(), "BACKGROUND:" + playerBackground.getId());
+
+        for (Tool t : playerClass.getFixedToolProficiencies()) {
+            createdCharacter.addToolProficiencyGrant(t, "CLASS:" + playerClass.getId());
+        }
+
+        if (!classTools.isEmpty()) {
+            for (Tool t : classTools) {
+                createdCharacter.addToolProficiencyGrant(t, "CLASS:" + playerClass.getId());
+            }
+        }
+
+        for (ArmorCategory ac : playerClass.getArmorTraining()) {
+            createdCharacter.addArmorTrainingGrant(ac, "CLASS:" + playerClass.getId());
         }
 
         Long savedCharacterId = playerCharacterRepository.save(createdCharacter).getId();

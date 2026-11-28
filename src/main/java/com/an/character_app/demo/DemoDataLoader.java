@@ -7,6 +7,7 @@ import com.an.character_app.character.service.PlayerCharacterService;
 import com.an.character_app.exception.InvalidCharacterException;
 import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.Skill;
+import com.an.character_app.rules.model.Tool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
@@ -49,7 +50,8 @@ public class DemoDataLoader implements ApplicationRunner {
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "chain-mail", null,
-                Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING));
+                Set.of(Skill.PERCEPTION, Skill.ANIMAL_HANDLING),
+                Tool.DICE, null);
     }
 
     private CreateCharacterRequest demoWizard() {
@@ -59,6 +61,7 @@ public class DemoDataLoader implements ApplicationRunner {
                 "wizard", "elf", "acolyte",
                 Map.of(Ability.INT, 2, Ability.WIS, 1),
                 null, null,
-                Set.of(Skill.ARCANA, Skill.INVESTIGATION));
+                Set.of(Skill.ARCANA, Skill.INVESTIGATION),
+                null, null);
     }
 }

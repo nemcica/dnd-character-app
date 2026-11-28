@@ -1,19 +1,13 @@
 package com.an.character_app.character.controller;
 
-import com.an.character_app.calc.AbilityBreakdown;
-import com.an.character_app.calc.CalculatedStats;
-import com.an.character_app.calc.CharacterCalculator;
-import com.an.character_app.calc.CharacterInput;
+import com.an.character_app.calc.*;
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
 import com.an.character_app.character.service.PlayerCharacterService;
 import com.an.character_app.exception.InvalidCharacterException;
-import com.an.character_app.rules.model.Ability;
-import com.an.character_app.rules.model.ArmorCategory;
-import com.an.character_app.rules.model.ProficiencyLevel;
-import com.an.character_app.rules.model.Skill;
+import com.an.character_app.rules.model.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +51,8 @@ class PlayerCharacterControllerTest {
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 "plate",
                 "shield",
-                Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
+                Set.of(Skill.ATHLETICS, Skill.INTIMIDATION),
+                Tool.DICE, null);
     }
 
     private CharacterSheetResponse validResponse() {
@@ -110,7 +105,8 @@ class PlayerCharacterControllerTest {
                 1,
                 10,
                 10,
-                9
+                9,
+                null
         );
 
         return new CharacterSheetResponse(
@@ -120,7 +116,9 @@ class PlayerCharacterControllerTest {
                 "Human",
                 "Fighter",
                 "Soldier",
-                calculatedStats
+                calculatedStats,
+                Set.of(Tool.DICE),
+                Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD)
         );
     }
 
@@ -135,7 +133,8 @@ class PlayerCharacterControllerTest {
                 Map.of(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT,
                         Skill.PERCEPTION, ProficiencyLevel.EXPERTISE),
                 Set.of(Ability.STR, Ability.CON),
-                ArmorCategory.HEAVY, 16, 0, 2);
+                new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, false, 0),
+                Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD));
 
         CalculatedStats stats = CharacterCalculator.calculate(characterInput);
         when(playerCharacterService.getCharacterSheet(1L)).thenReturn(
@@ -146,7 +145,8 @@ class PlayerCharacterControllerTest {
                         "Human",
                         "Fighter",
                         "Soldier",
-                        stats));
+                        stats, Set.of(Tool.DICE),
+                        Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD)));
 
         mockMvc.perform(get("/characters/1"))
                 .andExpect(status().isOk())
@@ -192,6 +192,8 @@ class PlayerCharacterControllerTest {
                 validRequest().backgroundAbilityBonuses(),
                 null,
                 null,
+                null,
+                null,
                 null);
 
         mockMvc.perform(post("/characters")
@@ -208,7 +210,8 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 21, validRequest().baseAbilityScores(),
                 "fighter", "human", "soldier",
-                validRequest().backgroundAbilityBonuses(), null, null, null);
+                validRequest().backgroundAbilityBonuses(),
+                null, null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -222,7 +225,8 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 1, new AbilityScoresRequest(19, 12, 14, 8, 10, 10),
                 "fighter", "human", "soldier",
-                validRequest().backgroundAbilityBonuses(), null, null, null);
+                validRequest().backgroundAbilityBonuses(),
+                null, null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -236,7 +240,7 @@ class PlayerCharacterControllerTest {
         CreateCharacterRequest bad = new CreateCharacterRequest(
                 "Tom", 1, validRequest().baseAbilityScores(),
                 "fighter", "human", "soldier",
-                Map.of(Ability.STR, 3), null, null, null);
+                Map.of(Ability.STR, 3), null, null, null, null, null);
 
         mockMvc.perform(post("/characters")
                         .contentType(MediaType.APPLICATION_JSON)

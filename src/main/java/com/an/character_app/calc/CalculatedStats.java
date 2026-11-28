@@ -4,6 +4,7 @@ import com.an.character_app.rules.model.Ability;
 import com.an.character_app.rules.model.Skill;
 
 import java.util.Map;
+import java.util.Set;
 
 public record CalculatedStats(
         int proficiencyBonus,
@@ -15,6 +16,7 @@ public record CalculatedStats(
         int initiative,
         int passivePerception,
         int passiveInsight,
-        int passiveInvestigation
+        int passiveInvestigation,
+        Set<ArmorWarning> armorWarnings
 ) {
 }

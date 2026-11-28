@@ -1,14 +1,8 @@
 package com.an.character_app.rules.controller;
 
-import com.an.character_app.rules.dto.ArmorResponse;
-import com.an.character_app.rules.dto.BackgroundResponse;
-import com.an.character_app.rules.dto.ClassResponse;
-import com.an.character_app.rules.dto.SpeciesResponse;
+import com.an.character_app.rules.dto.*;
 import com.an.character_app.rules.mapper.RulesMapper;
-import com.an.character_app.rules.repository.ArmorDefRepository;
-import com.an.character_app.rules.repository.BackgroundDefRepository;
-import com.an.character_app.rules.repository.ClassDefRepository;
-import com.an.character_app.rules.repository.SpeciesDefRepository;
+import com.an.character_app.rules.repository.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +22,7 @@ public class RulesController {
     private final SpeciesDefRepository speciesDefRepository;
     private final BackgroundDefRepository backgroundDefRepository;
     private final ClassDefRepository classDefRepository;
+    private final WeaponDefRepository weaponDefRepository;
     private final RulesMapper rulesMapper;
 
 
@@ -53,5 +48,11 @@ public class RulesController {
     @GetMapping("/armor")
     public List<ArmorResponse> getAllArmor() {
         return armorDefRepository.findAll().stream().map(rulesMapper::toResponse).toList();
+    }
+
+    @Operation(summary = "Get a list of weapons.")
+    @GetMapping("/weapons")
+    public List<WeaponResponse> getAllWeapons() {
+        return weaponDefRepository.findAll().stream().map(rulesMapper::toResponse).toList();
     }
 }

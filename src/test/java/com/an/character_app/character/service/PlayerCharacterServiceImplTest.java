@@ -4,9 +4,7 @@ import com.an.character_app.character.TestCharacters;
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CreateCharacterRequest;
-import com.an.character_app.character.model.AbilityScoreModifier;
-import com.an.character_app.character.model.PlayerCharacter;
-import com.an.character_app.character.model.SkillProficiencyGrant;
+import com.an.character_app.character.model.*;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
 import com.an.character_app.exception.InvalidCharacterException;
 import com.an.character_app.character.mapper.AbilityScoresMapper;
@@ -63,7 +61,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 classId, speciesId, backgroundId,
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, null);
+                null, null, null, null, null);
     }
 
     private void stubValidClassSpeciesBackground() {
@@ -81,7 +79,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                armorId, shieldId, null);
+                armorId, shieldId, null, null, null);
     }
 
     private void stubLookupsWithBackgroundOptions(Ability... options) {
@@ -112,7 +110,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, classSKills);
+                null, null, classSKills, null, null);
     }
 
     private CreateCharacterRequest requestWithBonuses(Map<Ability, Integer> bonuses) {
@@ -120,7 +118,7 @@ class PlayerCharacterServiceImplTest {
                 "Test", 1,
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
-                bonuses, null, null, null);
+                bonuses, null, null, null, null, null);
     }
 
     private void stubSavePersistsWithId(Long id) {
@@ -264,6 +262,7 @@ class PlayerCharacterServiceImplTest {
         when(soldier.getName()).thenReturn("Soldier");
         when(soldier.getSkills()).thenReturn(Set.of(Skill.ATHLETICS));
         when(soldier.getAbilityOptions()).thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        when(soldier.getToolCategory()).thenReturn(ToolCategory.GAMING_SET);
 
         when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
         when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
@@ -275,7 +274,7 @@ class PlayerCharacterServiceImplTest {
                 new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
-                null, null, Set.of(Skill.ANIMAL_HANDLING, Skill.ACROBATICS));
+                null, null, Set.of(Skill.ANIMAL_HANDLING, Skill.ACROBATICS), Tool.DICE, null);
 
         CharacterSheetResponse sheet = service.createCharacter(request);
 
@@ -370,6 +369,7 @@ class PlayerCharacterServiceImplTest {
         when(soldier.getName()).thenReturn("Soldier");
         when(soldier.getSkills()).thenReturn(Set.of(Skill.ATHLETICS, Skill.INTIMIDATION));
         when(soldier.getAbilityOptions()).thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        when(soldier.getToolCategory()).thenReturn(ToolCategory.GAMING_SET);
 
         when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
         when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
@@ -382,7 +382,7 @@ class PlayerCharacterServiceImplTest {
                 "fighter", "human", "soldier",
                 Map.of(Ability.STR, 2, Ability.CON, 1),
                 null, null,
-                Set.of(Skill.PERCEPTION, Skill.ACROBATICS));
+                Set.of(Skill.PERCEPTION, Skill.ACROBATICS), Tool.DICE, null);
 
         service.createCharacter(request);
 
@@ -398,6 +398,315 @@ class PlayerCharacterServiceImplTest {
                         tuple(Skill.INTIMIDATION, ProficiencyLevel.PROFICIENT, "BACKGROUND:soldier"),
                         tuple(Skill.PERCEPTION, ProficiencyLevel.PROFICIENT, "CLASS:fighter"),
                         tuple(Skill.ACROBATICS, ProficiencyLevel.PROFICIENT, "CLASS:fighter"));
+    }
+
+    private void stubLookupsWithBackgroundTool(Tool fixedTool, ToolCategory toolCategory) {
+        ClassDef fighter = mock(ClassDef.class);
+        lenient().when(fighter.getId()).thenReturn("fighter");
+        lenient().when(fighter.getName()).thenReturn("Fighter");
+        lenient().when(fighter.getHitDie()).thenReturn(10);
+        lenient().when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        lenient().when(fighter.getSkillChoiceCount()).thenReturn(2);
+        lenient().when(fighter.getSkillOptions())
+                .thenReturn(Set.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.PERCEPTION));
+
+        SpeciesDef human = mock(SpeciesDef.class);
+        lenient().when(human.getName()).thenReturn("Human");
+
+        BackgroundDef background = mock(BackgroundDef.class);
+        lenient().when(background.getId()).thenReturn("soldier");
+        lenient().when(background.getName()).thenReturn("Soldier");
+        lenient().when(background.getSkills()).thenReturn(Set.of());     // no overlap with the class picks
+        lenient().when(background.getAbilityOptions())
+                .thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        lenient().when(background.getTool()).thenReturn(fixedTool);
+        lenient().when(background.getToolCategory()).thenReturn(toolCategory);
+
+        lenient().when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        lenient().when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
+        lenient().when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(background));
+    }
+
+    private CreateCharacterRequest requestWithBackgroundTool(Tool backgroundTool) {
+        return new CreateCharacterRequest(
+                "Test", 5,
+                new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
+                "fighter", "human", "soldier",
+                Map.of(Ability.STR, 2, Ability.CON, 1),
+                null, null,
+                Set.of(Skill.ACROBATICS, Skill.PERCEPTION),
+                backgroundTool, null);
+    }
+
+    @Test
+    void rejectsRequestToolWhenBackgroundToolIsFixed() {
+        stubLookupsWithBackgroundTool(Tool.THIEVES_TOOLS, null);
+
+        assertThatThrownBy(() -> service.createCharacter(
+                requestWithBackgroundTool(Tool.CALLIGRAPHERS_SUPPLIES)))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("fixed tool");
+    }
+
+    @Test
+    void rejectsMissingToolWhenBackgroundHasToolCategory() {
+        stubLookupsWithBackgroundTool(null, ToolCategory.GAMING_SET);
+
+        assertThatThrownBy(() -> service.createCharacter(requestWithBackgroundTool(null)))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("requires you to select");
+    }
+
+    @Test
+    void rejectsToolFromWrongCategory() {
+        stubLookupsWithBackgroundTool(null, ToolCategory.GAMING_SET);
+
+        assertThatThrownBy(() -> service.createCharacter(
+                requestWithBackgroundTool(Tool.THIEVES_TOOLS)))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("GAMING_SET");
+    }
+
+    @Test
+    void createsGrantFromBackgroundsFixedTool() {
+        stubLookupsWithBackgroundTool(Tool.CALLIGRAPHERS_SUPPLIES, null);
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithBackgroundTool(null));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getTool, ToolProficiencyGrant::getSource)
+                .containsExactly(tuple(Tool.CALLIGRAPHERS_SUPPLIES, "BACKGROUND:soldier"));
+        assertThat(sheet.toolProficiencies()).containsExactly(Tool.CALLIGRAPHERS_SUPPLIES);
+    }
+
+    @Test
+    void createsGrantFromChosenToolWhenBackgroundHasToolCategory() {
+        stubLookupsWithBackgroundTool(null, ToolCategory.GAMING_SET);
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(
+                requestWithBackgroundTool(Tool.DICE));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getTool, ToolProficiencyGrant::getSource)
+                .containsExactly(tuple(Tool.DICE, "BACKGROUND:soldier"));
+        assertThat(sheet.toolProficiencies()).containsExactly(Tool.DICE);
+    }
+
+    private void stubLookupsWithClassTools(Tool backgroundFixedTool, Set<Tool> classFixedTools,
+                                           Set<ToolCategory> classToolCategories, int classToolChoiceCount) {
+        ClassDef fighter = mock(ClassDef.class);
+        lenient().when(fighter.getId()).thenReturn("fighter");
+        lenient().when(fighter.getName()).thenReturn("Fighter");
+        lenient().when(fighter.getHitDie()).thenReturn(10);
+        lenient().when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        lenient().when(fighter.getSkillChoiceCount()).thenReturn(2);
+        lenient().when(fighter.getSkillOptions())
+                .thenReturn(Set.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.PERCEPTION));
+        lenient().when(fighter.getFixedToolProficiencies()).thenReturn(classFixedTools);
+        lenient().when(fighter.getToolChoiceCategories()).thenReturn(classToolCategories);
+        lenient().when(fighter.getToolChoiceCount()).thenReturn(classToolChoiceCount);
+
+        SpeciesDef human = mock(SpeciesDef.class);
+        lenient().when(human.getName()).thenReturn("Human");
+
+        BackgroundDef background = mock(BackgroundDef.class);
+        lenient().when(background.getId()).thenReturn("soldier");
+        lenient().when(background.getName()).thenReturn("Soldier");
+        lenient().when(background.getSkills()).thenReturn(Set.of());
+        lenient().when(background.getAbilityOptions())
+                .thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        lenient().when(background.getTool()).thenReturn(backgroundFixedTool);
+        lenient().when(background.getToolCategory()).thenReturn(null);
+
+        lenient().when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        lenient().when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
+        lenient().when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(background));
+    }
+
+    private CreateCharacterRequest requestWithClassTools(Set<Tool> classTools) {
+        return new CreateCharacterRequest(
+                "Test", 5,
+                new AbilityScoresRequest(15, 14, 13, 12, 10, 8),
+                "fighter", "human", "soldier",
+                Map.of(Ability.STR, 2, Ability.CON, 1),
+                null, null,
+                Set.of(Skill.ACROBATICS, Skill.PERCEPTION),
+                null,
+                classTools);
+    }
+
+    @Test
+    void rejectsClassToolsWhenClassAllowsNoChoices() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(), 0);
+
+        assertThatThrownBy(() -> service.createCharacter(requestWithClassTools(Set.of(Tool.DICE))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("requires 0")
+                .hasMessageContaining("1 were provided");
+    }
+
+    @Test
+    void rejectsMissingClassToolsWhenClassRequiresChoices() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(ToolCategory.GAMING_SET), 1);
+
+        assertThatThrownBy(() -> service.createCharacter(requestWithClassTools(Set.of())))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("requires 1")
+                .hasMessageContaining("0 were provided");
+    }
+
+    @Test
+    void rejectsTooFewClassTools() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(ToolCategory.GAMING_SET), 2);
+
+        assertThatThrownBy(() -> service.createCharacter(requestWithClassTools(Set.of(Tool.DICE))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("requires 2")
+                .hasMessageContaining("1 were provided");
+    }
+
+    @Test
+    void rejectsTooManyClassTools() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(ToolCategory.GAMING_SET), 1);
+
+        assertThatThrownBy(() -> service.createCharacter(
+                requestWithClassTools(Set.of(Tool.DICE, Tool.THIEVES_TOOLS))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("requires 1")
+                .hasMessageContaining("2 were provided");
+    }
+
+    @Test
+    void rejectsClassToolFromDisallowedCategory() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(ToolCategory.GAMING_SET), 1);
+
+        assertThatThrownBy(() -> service.createCharacter(
+                requestWithClassTools(Set.of(Tool.THIEVES_TOOLS))))
+                .isInstanceOf(InvalidCharacterException.class)
+                .hasMessageContaining("THIEVES_TOOLS")
+                .hasMessageContaining("GAMING_SET");
+    }
+
+    @Test
+    void createsGrantsForClassFixedTools() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(Tool.THIEVES_TOOLS), Set.of(), 0);
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getTool, ToolProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(Tool.THIEVES_TOOLS, "CLASS:fighter"),
+                        tuple(Tool.CALLIGRAPHERS_SUPPLIES, "BACKGROUND:soldier"));
+        assertThat(sheet.toolProficiencies())
+                .containsExactlyInAnyOrder(Tool.THIEVES_TOOLS, Tool.CALLIGRAPHERS_SUPPLIES);
+    }
+
+    @Test
+    void createsGrantsForChosenClassTools() {
+        stubLookupsWithClassTools(Tool.CALLIGRAPHERS_SUPPLIES, Set.of(), Set.of(ToolCategory.GAMING_SET), 1);
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of(Tool.DICE)));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getTool, ToolProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(Tool.DICE, "CLASS:fighter"),
+                        tuple(Tool.CALLIGRAPHERS_SUPPLIES, "BACKGROUND:soldier"));
+        assertThat(sheet.toolProficiencies())
+                .containsExactlyInAnyOrder(Tool.DICE, Tool.CALLIGRAPHERS_SUPPLIES);
+    }
+
+    @Test
+    void sameToolFromClassAndBackgroundIsStoredTwiceButListedOnce() {
+        stubLookupsWithClassTools(Tool.THIEVES_TOOLS, Set.of(Tool.THIEVES_TOOLS), Set.of(), 0);
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getToolProficiencyGrants())
+                .extracting(ToolProficiencyGrant::getSource)
+                .containsExactlyInAnyOrder("CLASS:fighter", "BACKGROUND:soldier");
+        assertThat(sheet.toolProficiencies()).containsExactly(Tool.THIEVES_TOOLS);
+    }
+
+    private void stubLookupsWithArmorTraining(Set<ArmorCategory> armorTraining) {
+        ClassDef fighter = mock(ClassDef.class);
+        lenient().when(fighter.getId()).thenReturn("fighter");
+        lenient().when(fighter.getName()).thenReturn("Fighter");
+        lenient().when(fighter.getHitDie()).thenReturn(10);
+        lenient().when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        lenient().when(fighter.getSkillChoiceCount()).thenReturn(2);
+        lenient().when(fighter.getSkillOptions())
+                .thenReturn(Set.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.PERCEPTION));
+        lenient().when(fighter.getArmorTraining()).thenReturn(armorTraining);
+
+        SpeciesDef human = mock(SpeciesDef.class);
+        lenient().when(human.getName()).thenReturn("Human");
+
+        BackgroundDef background = mock(BackgroundDef.class);
+        lenient().when(background.getId()).thenReturn("soldier");
+        lenient().when(background.getName()).thenReturn("Soldier");
+        lenient().when(background.getSkills()).thenReturn(Set.of());
+        lenient().when(background.getAbilityOptions())
+                .thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        lenient().when(background.getTool()).thenReturn(Tool.CALLIGRAPHERS_SUPPLIES);
+
+        lenient().when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        lenient().when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
+        lenient().when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(background));
+    }
+
+    @Test
+    void createsArmorTrainingGrantsFromClass() {
+        stubLookupsWithArmorTraining(Set.of(ArmorCategory.LIGHT, ArmorCategory.SHIELD));
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getArmorTrainingGrants())
+                .extracting(ArmorTrainingGrant::getArmorCategory, ArmorTrainingGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(ArmorCategory.LIGHT, "CLASS:fighter"),
+                        tuple(ArmorCategory.SHIELD, "CLASS:fighter"));
+        assertThat(sheet.armorTraining())
+                .containsExactlyInAnyOrder(ArmorCategory.LIGHT, ArmorCategory.SHIELD);
+    }
+
+    @Test
+    void createsNoArmorTrainingGrantsForClassWithoutTraining() {
+        stubLookupsWithArmorTraining(Set.of());
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getArmorTrainingGrants()).isEmpty();
+        assertThat(sheet.armorTraining()).isEmpty();
     }
 
 }

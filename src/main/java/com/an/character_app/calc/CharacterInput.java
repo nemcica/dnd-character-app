@@ -15,9 +15,7 @@ public record CharacterInput(
         Map<Ability, Integer> bonusAbilityScores,
         Map<Skill, ProficiencyLevel> skillProficiencies,
         Set<Ability> savingThrowProficiencies,
-        ArmorCategory armorCategory,
-        Integer baseAc,
-        Integer dexCap,
-        int shieldBonus
+        ArmorFacts armor,
+        Set<ArmorCategory> armorTraining
 ) {
 }
