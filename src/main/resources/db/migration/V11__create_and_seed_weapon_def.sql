@@ -2,7 +2,7 @@ create table weapon_def(
     id                      varchar(50)     primary key,
     name                    varchar(100)    not null,
     category                varchar(30)     not null,
-    melee_ranged            varchar(10)     not null,
+    melee_or_ranged         varchar(10)     not null,
     damage_dice             varchar(10)     not null,
     damage_type             varchar(20)     not null,
     versatile_damage_dice   varchar(10),
@@ -29,7 +29,7 @@ create table weapon_property(
 -- SIMPLE MELEE WEAPONS
 -- ==========================================
 
-insert into weapon_def (id, name, category, melee_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
+insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('club', 'Club', 'SIMPLE', 'MELEE', '1d4', 'BLUDGEONING', null, null, 'SLOW', 'PHB2024'),
 ('dagger', 'Dagger', 'SIMPLE', 'MELEE', '1d4', 'PIERCING', null, '20/60', 'NICK', 'PHB2024'),
 ('greatclub', 'Greatclub', 'SIMPLE', 'MELEE', '1d8', 'BLUDGEONING', null, null, 'PUSH', 'PHB2024'),
@@ -65,7 +65,7 @@ insert into weapon_property (weapon_id, property) values
 -- SIMPLE RANGED WEAPONS
 -- ==========================================
 
-insert into weapon_def (id, name, category, melee_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
+insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('dart', 'Dart', 'SIMPLE', 'RANGED', '1d4', 'PIERCING', null, '20/60', 'VEX', 'PHB2024'),
 ('light_crossbow', 'Light Crossbow', 'SIMPLE', 'RANGED', '1d8', 'PIERCING', null, '80/320', 'SLOW', 'PHB2024'),
 ('shortbow', 'Shortbow', 'SIMPLE', 'RANGED', '1d6', 'PIERCING', null, '80/320', 'VEX', 'PHB2024'),
@@ -86,7 +86,7 @@ insert into weapon_property (weapon_id, property) values
 -- MARTIAL MELEE WEAPONS
 -- ==========================================
 
-insert into weapon_def (id, name, category, melee_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
+insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('battleaxe', 'Battleaxe', 'MARTIAL', 'MELEE', '1d8', 'SLASHING', '1d10', null, 'TOPPLE', 'PHB2024'),
 ('flail', 'Flail', 'MARTIAL', 'MELEE', '1d8', 'BLUDGEONING', null, null, 'SAP', 'PHB2024'),
 ('glaive', 'Glaive', 'MARTIAL', 'MELEE', '1d10', 'SLASHING', null, null, 'GRAZE', 'PHB2024'),
@@ -149,7 +149,7 @@ insert into weapon_property (weapon_id, property) values
 -- MARTIAL RANGED WEAPONS
 -- ==========================================
 
-insert into weapon_def (id, name, category, melee_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
+insert into weapon_def (id, name, category, melee_or_ranged, damage_dice, damage_type, versatile_damage_dice, weapon_range, weapon_mastery, source) values
 ('blowgun', 'Blowgun', 'MARTIAL', 'RANGED', '1', 'PIERCING', null, '25/100', 'VEX', 'PHB2024'),
 ('bola', 'Bola', 'MARTIAL', 'RANGED', '1', 'BLUDGEONING', null, '20/40', 'TOPPLE', 'PHB2024'),
 ('hand_crossbow', 'Hand Crossbow', 'MARTIAL', 'RANGED', '1d6', 'PIERCING', null, '30/120', 'VEX', 'PHB2024'),

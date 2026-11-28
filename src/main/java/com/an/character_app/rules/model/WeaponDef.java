@@ -18,6 +18,7 @@ public class WeaponDef {
     private String  name;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "category")
     private WeaponCategory weaponCategory;
 
     @Enumerated(EnumType.STRING)
