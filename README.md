@@ -155,9 +155,17 @@ mvn verify
     "initiative": 2,
     "passivePerception": 13,
     "passiveInsight": 10,
-    "passiveInvestigation": 11,
-    "toolProficiencies": ["DICE"]
-  }
+    "passiveInvestigation": 11
+  },
+  "toolProficiencies": [
+    "DICE"
+  ],
+  "armorTraining": [
+    "LIGHT",
+    "MEDIUM",
+    "HEAVY",
+    "SHIELD"
+  ]
 }
 ```
 </details>

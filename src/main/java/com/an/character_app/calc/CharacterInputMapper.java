@@ -1,17 +1,16 @@
 package com.an.character_app.calc;
 
 import com.an.character_app.character.model.AbilityScoreModifier;
+import com.an.character_app.character.model.ArmorTrainingGrant;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.character.model.SkillProficiencyGrant;
-import com.an.character_app.rules.model.Ability;
-import com.an.character_app.rules.model.ArmorDef;
-import com.an.character_app.rules.model.ProficiencyLevel;
-import com.an.character_app.rules.model.Skill;
+import com.an.character_app.rules.model.*;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CharacterInputMapper {
 
@@ -40,6 +39,19 @@ public class CharacterInputMapper {
         ArmorDef armor = playerCharacter.getArmor();
         ArmorDef shield = playerCharacter.getShield();
 
+        ArmorFacts armorFacts = new ArmorFacts(
+                armor == null ? null : armor.getCategory(),
+                armor == null ? null : armor.getBaseAc(),
+                armor == null ? null : armor.getDexCap(),
+                armor == null ? null : armor.getMinStrRequired(),
+                armor != null && armor.isStealthDisadvantage(),
+                shield != null,
+                shield == null ? 0 : shield.getBaseAc());
+
+        Set<ArmorCategory> armorTraining = playerCharacter.getArmorTrainingGrants().stream()
+                .map(ArmorTrainingGrant::getArmorCategory)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(ArmorCategory.class)));
+
         return new CharacterInput(
                 playerCharacter.getLevel(),
                 playerCharacter.getCharacterClass().getHitDie(),
@@ -47,10 +59,8 @@ public class CharacterInputMapper {
                 bonusScores,
                 skillProficiencies,
                 savingThrowProficiencies,
-                armor == null ? null : armor.getCategory(),
-                armor == null ? null : armor.getBaseAc(),
-                armor == null ? null : armor.getDexCap(),
-                shield == null ? 0 : shield.getBaseAc()
+                armorFacts,
+                armorTraining
         );
     }
 

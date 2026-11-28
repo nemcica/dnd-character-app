@@ -7,7 +7,9 @@ import com.an.character_app.rules.model.Skill;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,7 +102,8 @@ class CharacterCalculatorTest {
                 Map.of(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT,
                         Skill.PERCEPTION, ProficiencyLevel.EXPERTISE),
                 Set.of(Ability.STR, Ability.CON),
-                ArmorCategory.HEAVY, 16, 0, 2);
+                new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, true, 2),
+                Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD));
 
         CalculatedStats stats = calculate(characterInput);
 
@@ -130,7 +133,8 @@ class CharacterCalculatorTest {
                 Map.of(),
                 Map.of(),
                 Set.of(),
-                null, null, null, 0);
+                ArmorFacts.none(),
+                Set.of());
 
         CalculatedStats stats = CharacterCalculator.calculate(input);
 
@@ -142,4 +146,158 @@ class CharacterCalculatorTest {
         assertThat(stats.passivePerception()).isEqualTo(10);
     }
 
+    private static CharacterInput input(ArmorFacts armor, Set<ArmorCategory> training, int str, int dex) {
+        return input(armor, training, str, dex, Map.of());
+    }
+
+    private static CharacterInput input(ArmorFacts armor, Set<ArmorCategory> training, int str, int dex,
+                                        Map<Ability, Integer> bonuses) {
+        Map<Ability, Integer> base = new EnumMap<>(Ability.class);
+        for (Ability a : Ability.values()) {
+            base.put(a, 10);
+        }
+        base.put(Ability.STR, str);
+        base.put(Ability.DEX, dex);
+        return new CharacterInput(1, 8, base, bonuses, Map.of(), Set.of(), armor, training);
+    }
+
+    private static final ArmorFacts SHIELD_ONLY = new ArmorFacts(null, null, null, null, false, true, 2);
+    private static final ArmorFacts LEATHER = new ArmorFacts(ArmorCategory.LIGHT, 11, null, null, false, false, 0);
+    private static final ArmorFacts CHAIN_MAIL = new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, false, 0);
+
+    @Test
+    void shieldCountsWhenTrained() {
+        assertThat(effectiveShieldBonus(Set.of(ArmorCategory.SHIELD), 2)).isEqualTo(2);
+    }
+
+    @Test
+    void shieldDoesNotCountWhenUntrained() {
+        assertThat(effectiveShieldBonus(Set.of(ArmorCategory.LIGHT, ArmorCategory.HEAVY), 2)).isZero();
+        assertThat(effectiveShieldBonus(Set.of(), 2)).isZero();
+    }
+
+    @Test
+    void noShieldGivesNoBonusEvenWhenTrained() {
+        assertThat(effectiveShieldBonus(Set.of(ArmorCategory.SHIELD), 0)).isZero();
+    }
+
+    @Test
+    void unarmoredCharacterWithNoShieldHasNoWarnings() {
+        assertThat(armorWarnings(ArmorFacts.none(), Set.of(), 8)).isEmpty();
+    }
+
+    @Test
+    void trainedArmorWithNoIssuesHasNoWarnings() {
+        assertThat(armorWarnings(LEATHER, Set.of(ArmorCategory.LIGHT), 10)).isEmpty();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ArmorCategory.class, names = {"LIGHT", "MEDIUM", "HEAVY"})
+    void untrainedArmorCategoryIsFlagged(ArmorCategory category) {
+        ArmorFacts armor = new ArmorFacts(category, 12, null, null, false, false, 0);
+
+        assertThat(armorWarnings(armor, Set.of(), 10)).containsExactly(ArmorWarning.UNTRAINED_ARMOR);
+    }
+
+    @Test
+    void trainingInAnotherCategoryDoesNotCount() {
+        ArmorFacts heavy = new ArmorFacts(ArmorCategory.HEAVY, 18, 0, null, false, false, 0);
+
+        assertThat(armorWarnings(heavy, Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM), 10))
+                .containsExactly(ArmorWarning.UNTRAINED_ARMOR);
+    }
+
+    @Test
+    void strengthExactlyAtRequirementIsNotFlagged() {
+        assertThat(armorWarnings(CHAIN_MAIL, Set.of(ArmorCategory.HEAVY), 13))
+                .doesNotContain(ArmorWarning.STR_REQUIREMENT);
+    }
+
+    @Test
+    void strengthOneBelowRequirementIsFlagged() {
+        assertThat(armorWarnings(CHAIN_MAIL, Set.of(ArmorCategory.HEAVY), 12))
+                .contains(ArmorWarning.STR_REQUIREMENT);
+    }
+
+    @Test
+    void noStrengthRequirementIsNeverFlagged() {
+        assertThat(armorWarnings(LEATHER, Set.of(ArmorCategory.LIGHT), 3)).isEmpty();
+    }
+
+    @Test
+    void stealthDisadvantageIsIndependentOfTrainingAndStrength() {
+        ArmorFacts stealthy = new ArmorFacts(ArmorCategory.MEDIUM, 14, 2, null, true, false, 0);
+
+        assertThat(armorWarnings(stealthy, Set.of(ArmorCategory.MEDIUM), 10))
+                .containsExactly(ArmorWarning.STEALTH_DISADVANTAGE);
+    }
+
+    @Test
+    void untrainedShieldWithoutArmorIsFlagged() {
+        assertThat(armorWarnings(SHIELD_ONLY, Set.of(), 10))
+                .containsExactly(ArmorWarning.UNTRAINED_SHIELD);
+    }
+
+    @Test
+    void trainedShieldIsNotFlagged() {
+        assertThat(armorWarnings(SHIELD_ONLY, Set.of(ArmorCategory.SHIELD), 10)).isEmpty();
+    }
+
+    @Test
+    void trainedArmorWithUntrainedShieldFlagsOnlyTheShield() {
+        ArmorFacts both = new ArmorFacts(ArmorCategory.LIGHT, 11, null, null, false, true, 2);
+
+        assertThat(armorWarnings(both, Set.of(ArmorCategory.LIGHT), 10))
+                .containsExactly(ArmorWarning.UNTRAINED_SHIELD);
+    }
+
+    @Test
+    void everythingWrongGivesAllFourWarnings() {
+        ArmorFacts plateAndShield = new ArmorFacts(ArmorCategory.HEAVY, 18, 0, 15, true, true, 2);
+
+        assertThat(armorWarnings(plateAndShield, Set.of(), 8))
+                .containsExactlyInAnyOrder(ArmorWarning.UNTRAINED_ARMOR, ArmorWarning.UNTRAINED_SHIELD,
+                        ArmorWarning.STR_REQUIREMENT, ArmorWarning.STEALTH_DISADVANTAGE);
+    }
+
+    @Test
+    void untrainedShieldGivesNoAcBonusAndAWarning() {
+        CalculatedStats stats = CharacterCalculator.calculate(input(SHIELD_ONLY, Set.of(), 10, 14));
+
+        assertThat(stats.armorClass()).isEqualTo(12);
+        assertThat(stats.armorWarnings()).containsExactly(ArmorWarning.UNTRAINED_SHIELD);
+    }
+
+    @Test
+    void trainedFighterInChainMailWithShieldGetsFullAc() {
+        ArmorFacts chainAndShield = new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, true, 2);
+        Set<ArmorCategory> training = Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM,
+                ArmorCategory.HEAVY, ArmorCategory.SHIELD);
+
+        CalculatedStats stats = CharacterCalculator.calculate(input(chainAndShield, training, 15, 14));
+
+        assertThat(stats.armorClass()).isEqualTo(18);
+        assertThat(stats.armorWarnings()).containsExactly(ArmorWarning.STEALTH_DISADVANTAGE);
+    }
+
+    @Test
+    void untrainedArmorButTrainedShieldStillCountsTheShield() {
+        ArmorFacts leatherAndShield = new ArmorFacts(ArmorCategory.LIGHT, 11, null, null, false, true, 2);
+
+        CalculatedStats stats = CharacterCalculator.calculate(
+                input(leatherAndShield, Set.of(ArmorCategory.SHIELD), 10, 14));
+
+        assertThat(stats.armorClass()).isEqualTo(15);
+        assertThat(stats.armorWarnings()).containsExactly(ArmorWarning.UNTRAINED_ARMOR);
+    }
+
+    @Test
+    void strengthWarningUsesTheTotalScoreIncludingBonuses() {
+        Set<ArmorCategory> heavy = Set.of(ArmorCategory.HEAVY);
+
+        assertThat(CharacterCalculator.calculate(input(CHAIN_MAIL, heavy, 12, 10)).armorWarnings())
+                .contains(ArmorWarning.STR_REQUIREMENT);
+        assertThat(CharacterCalculator.calculate(input(CHAIN_MAIL, heavy, 12, 10, Map.of(Ability.STR, 1))).armorWarnings())
+                .doesNotContain(ArmorWarning.STR_REQUIREMENT);
+    }
 }

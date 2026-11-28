@@ -1,9 +1,6 @@
 package com.an.character_app.character.controller;
 
-import com.an.character_app.calc.AbilityBreakdown;
-import com.an.character_app.calc.CalculatedStats;
-import com.an.character_app.calc.CharacterCalculator;
-import com.an.character_app.calc.CharacterInput;
+import com.an.character_app.calc.*;
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CharacterSummary;
@@ -108,7 +105,8 @@ class PlayerCharacterControllerTest {
                 1,
                 10,
                 10,
-                9
+                9,
+                null
         );
 
         return new CharacterSheetResponse(
@@ -119,7 +117,8 @@ class PlayerCharacterControllerTest {
                 "Fighter",
                 "Soldier",
                 calculatedStats,
-                Set.of(Tool.DICE)
+                Set.of(Tool.DICE),
+                Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD)
         );
     }
 
@@ -134,7 +133,8 @@ class PlayerCharacterControllerTest {
                 Map.of(Skill.ATHLETICS, ProficiencyLevel.PROFICIENT,
                         Skill.PERCEPTION, ProficiencyLevel.EXPERTISE),
                 Set.of(Ability.STR, Ability.CON),
-                ArmorCategory.HEAVY, 16, 0, 2);
+                new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, false, 0),
+                Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD));
 
         CalculatedStats stats = CharacterCalculator.calculate(characterInput);
         when(playerCharacterService.getCharacterSheet(1L)).thenReturn(
@@ -145,7 +145,8 @@ class PlayerCharacterControllerTest {
                         "Human",
                         "Fighter",
                         "Soldier",
-                        stats, Set.of(Tool.DICE)));
+                        stats, Set.of(Tool.DICE),
+                        Set.of(ArmorCategory.LIGHT, ArmorCategory.MEDIUM, ArmorCategory.HEAVY, ArmorCategory.SHIELD)));
 
         mockMvc.perform(get("/characters/1"))
                 .andExpect(status().isOk())

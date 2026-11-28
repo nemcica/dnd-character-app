@@ -9,6 +9,7 @@ import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CharacterSummary;
 import com.an.character_app.character.dto.CreateCharacterRequest;
 import com.an.character_app.character.model.AbilityScores;
+import com.an.character_app.character.model.ArmorTrainingGrant;
 import com.an.character_app.character.model.PlayerCharacter;
 import com.an.character_app.character.model.ToolProficiencyGrant;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
@@ -52,6 +53,9 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
         Set<Tool> toolProficiencies = foundCharacter.getToolProficiencyGrants().stream()
                 .map(ToolProficiencyGrant::getTool)
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(Tool.class)));
+        Set<ArmorCategory> armorTraining = foundCharacter.getArmorTrainingGrants().stream()
+                .map(ArmorTrainingGrant::getArmorCategory)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(ArmorCategory.class)));
 
         return new CharacterSheetResponse(
                 foundCharacter.getId(),
@@ -61,8 +65,9 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
                 foundCharacter.getCharacterClass().getName(),
                 foundCharacter.getBackground().getName(),
                 stats,
-                toolProficiencies
-        );
+                toolProficiencies,
+                armorTraining
+                );
     }
 
     @Override
@@ -172,6 +177,10 @@ public class PlayerCharacterServiceImpl implements PlayerCharacterService {
             for (Tool t : classTools) {
                 createdCharacter.addToolProficiencyGrant(t, "CLASS:" + playerClass.getId());
             }
+        }
+
+        for (ArmorCategory ac : playerClass.getArmorTraining()) {
+            createdCharacter.addArmorTrainingGrant(ac, "CLASS:" + playerClass.getId());
         }
 
         Long savedCharacterId = playerCharacterRepository.save(createdCharacter).getId();

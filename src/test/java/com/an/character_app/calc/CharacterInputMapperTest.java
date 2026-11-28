@@ -31,10 +31,10 @@ class CharacterInputMapperTest {
 
         CharacterInput input = CharacterInputMapper.toInput(pc);
 
-        assertThat(input.armorCategory()).isNull();
-        assertThat(input.baseAc()).isNull();
-        assertThat(input.dexCap()).isNull();
-        assertThat(input.shieldBonus()).isZero();
+        assertThat(input.armor().category()).isNull();
+        assertThat(input.armor().baseAc()).isNull();
+        assertThat(input.armor().dexCap()).isNull();
+        assertThat(input.armor().shieldBonus()).isZero();
     }
 
     @Test
@@ -45,10 +45,10 @@ class CharacterInputMapperTest {
 
         CharacterInput input = CharacterInputMapper.toInput(pc);
 
-        assertThat(input.armorCategory()).isEqualTo(ArmorCategory.HEAVY);
-        assertThat(input.baseAc()).isEqualTo(16);
-        assertThat(input.dexCap()).isZero();
-        assertThat(input.shieldBonus()).isEqualTo(2);
+        assertThat(input.armor().category()).isEqualTo(ArmorCategory.HEAVY);
+        assertThat(input.armor().baseAc()).isEqualTo(16);
+        assertThat(input.armor().dexCap()).isZero();
+        assertThat(input.armor().shieldBonus()).isEqualTo(2);
     }
 
     @Test
@@ -56,7 +56,7 @@ class CharacterInputMapperTest {
         PlayerCharacter pc = testCharacters.baseCharacter();
         pc.setArmor(armor(ArmorCategory.LIGHT, 11, null));
 
-        assertThat(CharacterInputMapper.toInput(pc).dexCap()).isNull();
+        assertThat(CharacterInputMapper.toInput(pc).armor().dexCap()).isNull();
     }
 
     @Test
@@ -137,5 +137,60 @@ class CharacterInputMapperTest {
                 .containsOnly(entry(Skill.STEALTH, ProficiencyLevel.EXPERTISE));
     }
 
+    private ArmorDef armorWith(ArmorCategory category, int baseAc, Integer dexCap,
+                               Integer minStr, boolean stealth) {
+        ArmorDef a = mock(ArmorDef.class);
+        when(a.getCategory()).thenReturn(category);
+        when(a.getBaseAc()).thenReturn(baseAc);
+        when(a.getDexCap()).thenReturn(dexCap);
+        when(a.getMinStrRequired()).thenReturn(minStr);
+        when(a.isStealthDisadvantage()).thenReturn(stealth);
+        return a;
+    }
 
+    @Test
+    void unarmoredCharacterMapsToNoArmorFacts() {
+        CharacterInput input = CharacterInputMapper.toInput(testCharacters.baseCharacter());
+
+        assertThat(input.armor()).isEqualTo(ArmorFacts.none());
+    }
+
+    @Test
+    void chainMailAndShieldMapToFullArmorFacts() {
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setArmor(armorWith(ArmorCategory.HEAVY, 16, 0, 13, true));
+        pc.setShield(armorWith(ArmorCategory.SHIELD, 2, null, null, false));
+
+        assertThat(CharacterInputMapper.toInput(pc).armor())
+                .isEqualTo(new ArmorFacts(ArmorCategory.HEAVY, 16, 0, 13, true, true, 2));
+    }
+
+    @Test
+    void lightArmorKeepsNullRequirementAndNullDexCap() {
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setArmor(armorWith(ArmorCategory.LIGHT, 11, null, null, false));
+
+        assertThat(CharacterInputMapper.toInput(pc).armor())
+                .isEqualTo(new ArmorFacts(ArmorCategory.LIGHT, 11, null, null, false, false, 0));
+    }
+
+    @Test
+    void shieldWithoutArmorIsEquippedWithNoArmorCategory() {
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.setShield(armorWith(ArmorCategory.SHIELD, 2, null, null, false));
+
+        assertThat(CharacterInputMapper.toInput(pc).armor())
+                .isEqualTo(new ArmorFacts(null, null, null, null, false, true, 2));
+    }
+
+    @Test
+    void armorTrainingGrantsAreMappedAndDuplicatesCollapse() {
+        PlayerCharacter pc = testCharacters.baseCharacter();
+        pc.addArmorTrainingGrant(ArmorCategory.LIGHT, "CLASS:rogue");
+        pc.addArmorTrainingGrant(ArmorCategory.LIGHT, "FEAT:test");
+        pc.addArmorTrainingGrant(ArmorCategory.SHIELD, "FEAT:test");
+
+        assertThat(CharacterInputMapper.toInput(pc).armorTraining())
+                .containsExactlyInAnyOrder(ArmorCategory.LIGHT, ArmorCategory.SHIELD);
+    }
 }

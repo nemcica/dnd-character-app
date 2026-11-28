@@ -4,10 +4,7 @@ import com.an.character_app.character.TestCharacters;
 import com.an.character_app.character.dto.AbilityScoresRequest;
 import com.an.character_app.character.dto.CharacterSheetResponse;
 import com.an.character_app.character.dto.CreateCharacterRequest;
-import com.an.character_app.character.model.AbilityScoreModifier;
-import com.an.character_app.character.model.PlayerCharacter;
-import com.an.character_app.character.model.SkillProficiencyGrant;
-import com.an.character_app.character.model.ToolProficiencyGrant;
+import com.an.character_app.character.model.*;
 import com.an.character_app.character.repository.PlayerCharacterRepository;
 import com.an.character_app.exception.InvalidCharacterException;
 import com.an.character_app.character.mapper.AbilityScoresMapper;
@@ -650,6 +647,66 @@ class PlayerCharacterServiceImplTest {
                 .extracting(ToolProficiencyGrant::getSource)
                 .containsExactlyInAnyOrder("CLASS:fighter", "BACKGROUND:soldier");
         assertThat(sheet.toolProficiencies()).containsExactly(Tool.THIEVES_TOOLS);
+    }
+
+    private void stubLookupsWithArmorTraining(Set<ArmorCategory> armorTraining) {
+        ClassDef fighter = mock(ClassDef.class);
+        lenient().when(fighter.getId()).thenReturn("fighter");
+        lenient().when(fighter.getName()).thenReturn("Fighter");
+        lenient().when(fighter.getHitDie()).thenReturn(10);
+        lenient().when(fighter.getSavingThrows()).thenReturn(Set.of(Ability.STR, Ability.CON));
+        lenient().when(fighter.getSkillChoiceCount()).thenReturn(2);
+        lenient().when(fighter.getSkillOptions())
+                .thenReturn(Set.of(Skill.ACROBATICS, Skill.ATHLETICS, Skill.PERCEPTION));
+        lenient().when(fighter.getArmorTraining()).thenReturn(armorTraining);
+
+        SpeciesDef human = mock(SpeciesDef.class);
+        lenient().when(human.getName()).thenReturn("Human");
+
+        BackgroundDef background = mock(BackgroundDef.class);
+        lenient().when(background.getId()).thenReturn("soldier");
+        lenient().when(background.getName()).thenReturn("Soldier");
+        lenient().when(background.getSkills()).thenReturn(Set.of());
+        lenient().when(background.getAbilityOptions())
+                .thenReturn(Set.of(Ability.STR, Ability.DEX, Ability.CON));
+        lenient().when(background.getTool()).thenReturn(Tool.CALLIGRAPHERS_SUPPLIES);
+
+        lenient().when(classDefRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        lenient().when(speciesDefRepository.findById("human")).thenReturn(Optional.of(human));
+        lenient().when(backgroundDefRepository.findById("soldier")).thenReturn(Optional.of(background));
+    }
+
+    @Test
+    void createsArmorTrainingGrantsFromClass() {
+        stubLookupsWithArmorTraining(Set.of(ArmorCategory.LIGHT, ArmorCategory.SHIELD));
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getArmorTrainingGrants())
+                .extracting(ArmorTrainingGrant::getArmorCategory, ArmorTrainingGrant::getSource)
+                .containsExactlyInAnyOrder(
+                        tuple(ArmorCategory.LIGHT, "CLASS:fighter"),
+                        tuple(ArmorCategory.SHIELD, "CLASS:fighter"));
+        assertThat(sheet.armorTraining())
+                .containsExactlyInAnyOrder(ArmorCategory.LIGHT, ArmorCategory.SHIELD);
+    }
+
+    @Test
+    void createsNoArmorTrainingGrantsForClassWithoutTraining() {
+        stubLookupsWithArmorTraining(Set.of());
+        stubSavePersistsWithId(1L);
+
+        CharacterSheetResponse sheet = service.createCharacter(requestWithClassTools(Set.of()));
+
+        ArgumentCaptor<PlayerCharacter> captor = ArgumentCaptor.forClass(PlayerCharacter.class);
+        verify(playerCharacterRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getArmorTrainingGrants()).isEmpty();
+        assertThat(sheet.armorTraining()).isEmpty();
     }
 
 }

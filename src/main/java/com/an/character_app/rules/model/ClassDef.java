@@ -49,4 +49,10 @@ public class ClassDef {
     @Column(name = "tool_category")
     @Enumerated(EnumType.STRING)
     private Set<ToolCategory> toolChoiceCategories;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "class_def_armor_training", joinColumns = @JoinColumn(name = "class_def_id"))
+    @Column(name = "armor_category")
+    @Enumerated(EnumType.STRING)
+    private Set<ArmorCategory> armorTraining;
 }

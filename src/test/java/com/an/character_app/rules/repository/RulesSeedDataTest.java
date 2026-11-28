@@ -129,4 +129,14 @@ class RulesSeedDataTest {
         assertThat(plate.getMinStrRequired()).isEqualTo(15);
         assertThat(plate.isStealthDisadvantage()).isTrue();
     }
+
+    @Test
+    void seededClassArmorTrainingMatchesExpectedValues() {
+        assertThat(classRepo.findById("fighter").orElseThrow().getArmorTraining())
+                .containsExactlyInAnyOrder(ArmorCategory.LIGHT, ArmorCategory.MEDIUM,
+                        ArmorCategory.HEAVY, ArmorCategory.SHIELD);
+        assertThat(classRepo.findById("wizard").orElseThrow().getArmorTraining()).isEmpty();
+        assertThat(classRepo.findById("rogue").orElseThrow().getArmorTraining())
+                .containsExactly(ArmorCategory.LIGHT);
+    }
 }

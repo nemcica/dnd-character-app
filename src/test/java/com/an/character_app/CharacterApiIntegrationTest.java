@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -217,5 +218,148 @@ public class CharacterApiIntegrationTest {
         Integer rows = jdbcTemplate.queryForObject(
                 "select count(*) from tool_proficiency_grant where tool = 'THIEVES_TOOLS'", Integer.class);
         assertThat(rows).isEqualTo(2);
+    }
+
+    private static final String WIZARD_BODY = """
+        {
+          "name": "Merlin",
+          "level": 3,
+          "baseAbilityScores": {
+            "strength": 8, "dexterity": 14, "constitution": 13,
+            "intelligence": 15, "wisdom": 12, "charisma": 10
+          },
+          "classId": "wizard",
+          "speciesId": "elf",
+          "backgroundId": "acolyte",
+          "backgroundAbilityBonuses": { "INT": 2, "WIS": 1 },
+          "classSkills": ["ARCANA", "HISTORY"]
+        }
+        """;
+
+    @Test
+    void fighterSheetListsAllArmorTraining() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.armorTraining",
+                        containsInAnyOrder("LIGHT", "MEDIUM", "HEAVY", "SHIELD")));
+    }
+
+    @Test
+    void wizardSheetHasNoArmorTraining() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(WIZARD_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.armorTraining").isEmpty());
+    }
+
+    private static final String WIZARD_SHIELD_BODY = """
+        {
+          "name": "Merlin",
+          "level": 3,
+          "baseAbilityScores": {
+            "strength": 8, "dexterity": 14, "constitution": 13,
+            "intelligence": 15, "wisdom": 12, "charisma": 10
+          },
+          "classId": "wizard",
+          "speciesId": "elf",
+          "backgroundId": "acolyte",
+          "backgroundAbilityBonuses": { "INT": 2, "WIS": 1 },
+          "shieldId": "shield",
+          "classSkills": ["ARCANA", "HISTORY"]
+        }
+        """;
+
+    private static final String WIZARD_PLATE_SHIELD_BODY = """
+        {
+          "name": "Merlin",
+          "level": 3,
+          "baseAbilityScores": {
+            "strength": 8, "dexterity": 14, "constitution": 13,
+            "intelligence": 15, "wisdom": 12, "charisma": 10
+          },
+          "classId": "wizard",
+          "speciesId": "elf",
+          "backgroundId": "acolyte",
+          "backgroundAbilityBonuses": { "INT": 2, "WIS": 1 },
+          "armorId": "plate",
+          "shieldId": "shield",
+          "classSkills": ["ARCANA", "HISTORY"]
+        }
+        """;
+
+    private static final String FIGHTER_CHAIN_SHIELD_BODY = """
+        {
+          "name": "Tom",
+          "level": 5,
+          "baseAbilityScores": {
+            "strength": 15, "dexterity": 14, "constitution": 13,
+            "intelligence": 12, "wisdom": 10, "charisma": 8
+          },
+          "classId": "fighter",
+          "speciesId": "human",
+          "backgroundId": "soldier",
+          "backgroundAbilityBonuses": { "STR": 2, "CON": 1 },
+          "armorId": "chain-mail",
+          "shieldId": "shield",
+          "classSkills": ["PERCEPTION", "ACROBATICS"],
+          "backgroundTool": "DICE"
+        }
+        """;
+
+    @Test
+    void wizardWithShieldIsAcceptedWithLowerAcAndWarning() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(WIZARD_SHIELD_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.calculatedStats.armorClass").value(12))   // 10 + DEX +2, no shield bonus
+                .andExpect(jsonPath("$.calculatedStats.armorWarnings",
+                        containsInAnyOrder("UNTRAINED_SHIELD")));
+    }
+
+    @Test
+    void wizardInPlateWithShieldGetsAllFourWarnings() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(WIZARD_PLATE_SHIELD_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.calculatedStats.armorClass").value(18))   // plate only
+                .andExpect(jsonPath("$.calculatedStats.armorWarnings",
+                        containsInAnyOrder("UNTRAINED_ARMOR", "UNTRAINED_SHIELD",
+                                "STR_REQUIREMENT", "STEALTH_DISADVANTAGE")));
+    }
+
+    @Test
+    void fighterInChainMailWithShieldGetsFullAcAndOnlyStealthWarning() throws Exception {
+        MvcResult created = mockMvc.perform(post("/characters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FIGHTER_CHAIN_SHIELD_BODY))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        mockMvc.perform(get(created.getResponse().getHeader("Location")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.calculatedStats.armorClass").value(18))   // 16 + shield 2
+                .andExpect(jsonPath("$.calculatedStats.armorWarnings",
+                        containsInAnyOrder("STEALTH_DISADVANTAGE")));
     }
 }
